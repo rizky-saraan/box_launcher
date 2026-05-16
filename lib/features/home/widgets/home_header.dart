@@ -39,50 +39,70 @@ class _HomeHeaderState extends State<HomeHeader> {
     final timeString = DateFormat('HH:mm').format(_now);
     final dateString = DateFormat('EEEE, d MMM').format(_now);
 
-    return Padding(
+    return Container(
+      constraints: BoxConstraints(
+        minHeight: MediaQuery.of(context).size.height - MediaQuery.of(context).padding.top,
+      ),
       padding: const EdgeInsets.only(left: 32.0, top: 120.0, bottom: 48.0, right: 32.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Stack(
         children: [
-          Text(
-            timeString,
-            style: const TextStyle(
-              fontSize: 72,
-              fontWeight: FontWeight.w300,
-              letterSpacing: -2,
-              color: Colors.white,
-            ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                timeString,
+                style: const TextStyle(
+                  fontSize: 72,
+                  fontWeight: FontWeight.w300,
+                  letterSpacing: -2,
+                  color: Colors.white,
+                ),
+              ),
+              Text(
+                dateString,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.white70,
+                ),
+              ),
+              const SizedBox(height: 64),
+              BlocBuilder<FavoritesBloc, FavoritesState>(
+                builder: (context, state) {
+                  if (state is FavoritesLoaded) {
+                    if (state.favorites.isEmpty) {
+                      return const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 24),
+                        child: Text(
+                          'Long press an app to add to favorites',
+                          style: TextStyle(color: Colors.white54, fontStyle: FontStyle.italic),
+                        ),
+                      );
+                    }
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: state.favorites.map((app) {
+                        return AppListItem(app: app, isFavoriteList: true);
+                      }).toList(),
+                    );
+                  }
+                  return const SizedBox.shrink();
+                },
+              ),
+            ],
           ),
-          Text(
-            dateString,
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w500,
-              color: Colors.white70,
+          const Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: Icon(
+                Icons.keyboard_arrow_down,
+                color: Colors.white24,
+                size: 32,
+              ),
             ),
-          ),
-          const SizedBox(height: 64),
-          BlocBuilder<FavoritesBloc, FavoritesState>(
-            builder: (context, state) {
-              if (state is FavoritesLoaded) {
-                if (state.favorites.isEmpty) {
-                  return const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 24),
-                    child: Text(
-                      'Long press an app to add to favorites',
-                      style: TextStyle(color: Colors.white54, fontStyle: FontStyle.italic),
-                    ),
-                  );
-                }
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: state.favorites.map((app) {
-                    return AppListItem(app: app, isFavoriteList: true);
-                  }).toList(),
-                );
-              }
-              return const SizedBox.shrink();
-            },
           ),
         ],
       ),
