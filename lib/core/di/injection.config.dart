@@ -16,8 +16,10 @@ import '../../data/datasources/native_channel.dart' as _i7;
 import '../../data/repositories/app_repository_impl.dart' as _i9;
 import '../../domain/repositories/app_repository.dart' as _i8;
 import '../../domain/usecases/app_usecases.dart' as _i10;
-import '../../features/apps/bloc/apps_bloc.dart' as _i11;
-import '../../features/favorites/bloc/favorites_bloc.dart' as _i12;
+import '../../domain/usecases/theme_usecases.dart' as _i11;
+import '../../features/apps/bloc/apps_bloc.dart' as _i12;
+import '../../features/favorites/bloc/favorites_bloc.dart' as _i14;
+import '../../features/icon_pack/bloc/icon_pack_bloc.dart' as _i13;
 import '../../features/launcher/bloc/launcher_bloc.dart' as _i4;
 import '../../features/search/bloc/search_bloc.dart' as _i5;
 import '../theme/bloc/theme_bloc.dart' as _i3;
@@ -52,12 +54,23 @@ extension GetItInjectableX on _i1.GetIt {
         () => _i10.GetFavoritesUseCase(gh<_i8.AppRepository>()));
     gh.factory<_i10.SaveFavoritesUseCase>(
         () => _i10.SaveFavoritesUseCase(gh<_i8.AppRepository>()));
-    gh.factory<_i11.AppsBloc>(() => _i11.AppsBloc(
+    gh.factory<_i11.GetInstalledIconPacksUseCase>(
+        () => _i11.GetInstalledIconPacksUseCase(gh<_i8.AppRepository>()));
+    gh.factory<_i11.GetIconPackUseCase>(
+        () => _i11.GetIconPackUseCase(gh<_i8.AppRepository>()));
+    gh.factory<_i11.SetIconPackUseCase>(
+        () => _i11.SetIconPackUseCase(gh<_i8.AppRepository>()));
+    gh.factory<_i12.AppsBloc>(() => _i12.AppsBloc(
           gh<_i10.GetAppsUseCase>(),
           gh<_i10.OpenAppUseCase>(),
           gh<_i10.GetAppIconUseCase>(),
         ));
-    gh.factory<_i12.FavoritesBloc>(() => _i12.FavoritesBloc(
+    gh.factory<_i13.IconPackBloc>(() => _i13.IconPackBloc(
+          gh<_i11.GetInstalledIconPacksUseCase>(),
+          gh<_i11.GetIconPackUseCase>(),
+          gh<_i11.SetIconPackUseCase>(),
+        ));
+    gh.factory<_i14.FavoritesBloc>(() => _i14.FavoritesBloc(
           gh<_i10.GetFavoritesUseCase>(),
           gh<_i10.SaveFavoritesUseCase>(),
           gh<_i10.GetAppsUseCase>(),

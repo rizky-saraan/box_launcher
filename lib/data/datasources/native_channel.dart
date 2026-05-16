@@ -25,4 +25,15 @@ class NativeChannel {
       return null;
     }
   }
+
+  Future<List<Map<String, String>>> getInstalledIconPacks() async {
+    final List<dynamic>? packs = await _channel.invokeMethod('getInstalledIconPacks');
+    if (packs == null) return [];
+    return packs.cast<Map<Object?, Object?>>().map((e) => e.cast<String, String>()).toList();
+  }
+
+  Future<bool> setIconPack(String? packageName) async {
+    final bool? result = await _channel.invokeMethod('setIconPack', {'packageName': packageName});
+    return result ?? false;
+  }
 }

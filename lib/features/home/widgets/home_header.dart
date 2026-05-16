@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:box_launcher/features/apps/widgets/app_list_item.dart';
 import 'package:box_launcher/features/favorites/bloc/favorites_bloc.dart';
+import 'package:box_launcher/features/icon_pack/bloc/icon_pack_bloc.dart';
+import 'package:box_launcher/features/apps/bloc/apps_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
@@ -50,22 +52,37 @@ class _HomeHeaderState extends State<HomeHeader> {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
-                timeString,
-                style: const TextStyle(
-                  fontSize: 72,
-                  fontWeight: FontWeight.w300,
-                  letterSpacing: -2,
-                  color: Colors.white,
-                ),
-              ),
-              Text(
-                dateString,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.white70,
-                ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        timeString,
+                        style: const TextStyle(
+                          fontSize: 72,
+                          fontWeight: FontWeight.w300,
+                          letterSpacing: -2,
+                          color: Colors.white,
+                        ),
+                      ),
+                      Text(
+                        dateString,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.white70,
+                        ),
+                      ),
+                    ],
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.palette_outlined, color: Colors.white54),
+                    onPressed: () => _showThemeSettings(context),
+                  ),
+                ],
               ),
               const SizedBox(height: 64),
               BlocBuilder<FavoritesBloc, FavoritesState>(
@@ -106,6 +123,64 @@ class _HomeHeaderState extends State<HomeHeader> {
           ),
         ],
       ),
+    );
+  }
+  void _showThemeSettings(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF1E1E1E),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: BlocBuilder<IconPackBloc, IconPackState>(
+            builder: (context, state) {
+              if (state is IconPackLoading) {
+                return const SizedBox(
+                  height: 200,
+                  child: Center(child: CircularProgressIndicator()),
+                );
+              } else if (state is IconPackLoaded) {
+                return Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Padding(
+                      padding: EdgeInsets.all(16.0),
+                      child: Text(
+                        'Select Icon Pack',
+                        style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    Flexible(
+                      child: ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: state.availableIconPacks.length,
+                        itemBuilder: (context, index) {
+                          final pack = state.availableIconPacks[index];
+                          final isSelected = pack['packageName'] == state.selectedIconPack || 
+                                            (state.selectedIconPack == null && pack['packageName'] == "");
+                          return ListTile(
+                            title: Text(pack['label'] ?? 'Unknown', style: const TextStyle(color: Colors.white)),
+                            trailing: isSelected ? const Icon(Icons.check, color: Colors.green) : null,
+                            onTap: () {
+                              context.read<IconPackBloc>().add(SetIconPackSelectionEvent(pack['packageName']));
+                              // Reload apps so the icons refresh
+                              context.read<AppsBloc>().add(LoadAppsEvent());
+                              Navigator.pop(context);
+                            },
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                );
+              }
+              return const SizedBox.shrink();
+            },
+          ),
+        );
+      },
     );
   }
 }

@@ -5,6 +5,7 @@ import 'package:box_launcher/features/favorites/bloc/favorites_bloc.dart';
 import 'package:box_launcher/features/launcher/bloc/launcher_bloc.dart';
 import 'package:box_launcher/features/launcher/pages/launcher_page.dart';
 import 'package:box_launcher/features/search/bloc/search_bloc.dart';
+import 'package:box_launcher/features/icon_pack/bloc/icon_pack_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:hive_flutter/hive_flutter.dart';
@@ -28,6 +29,7 @@ class BoxLauncherApp extends StatelessWidget {
         BlocProvider(create: (_) => getIt<AppsBloc>()..add(LoadAppsEvent())),
         BlocProvider(create: (_) => getIt<FavoritesBloc>()..add(LoadFavoritesEvent())),
         BlocProvider(create: (_) => getIt<SearchBloc>()),
+        BlocProvider(create: (_) => getIt<IconPackBloc>()..add(LoadIconPackEvent())),
       ],
       child: BlocBuilder<ThemeBloc, ThemeState>(
         builder: (context, state) {

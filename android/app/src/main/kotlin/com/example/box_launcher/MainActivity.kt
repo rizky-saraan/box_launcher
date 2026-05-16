@@ -11,10 +11,14 @@ import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 import java.io.ByteArrayOutputStream
 import kotlinx.coroutines.*
+import org.xmlpull.v1.XmlPullParser
 
 class MainActivity: FlutterActivity() {
     private val CHANNEL = "com.box_launcher/apps"
     private val scope = CoroutineScope(Dispatchers.IO + Job())
+
+    private var currentIconPack: String? = null
+    private val iconPackCache = mutableMapOf<String, String>()
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
@@ -54,6 +58,23 @@ class MainActivity: FlutterActivity() {
                         result.error("INVALID_PACKAGE", "Package name is null", null)
                     }
                 }
+                "getInstalledIconPacks" -> {
+                    scope.launch {
+                        val packs = getInstalledIconPacks()
+                        withContext(Dispatchers.Main) {
+                            result.success(packs)
+                        }
+                    }
+                }
+                "setIconPack" -> {
+                    val packName = call.argument<String>("packageName")
+                    scope.launch {
+                        loadIconPack(packName)
+                        withContext(Dispatchers.Main) {
+                            result.success(true)
+                        }
+                    }
+                }
                 else -> {
                     result.notImplemented()
                 }
@@ -82,12 +103,85 @@ class MainActivity: FlutterActivity() {
         return apps.sortedBy { (it["label"] as String).lowercase() }
     }
 
+    private fun getInstalledIconPacks(): List<Map<String, String>> {
+        val pm = packageManager
+        val intentNova = Intent("com.novalauncher.THEME")
+        val resolveInfosNova = pm.queryIntentActivities(intentNova, 0)
+        
+        val intentAdw = Intent("org.adw.launcher.THEMES")
+        val resolveInfosAdw = pm.queryIntentActivities(intentAdw, 0)
+        
+        val allInfos = (resolveInfosNova + resolveInfosAdw).distinctBy { it.activityInfo.packageName }
+        
+        val packs = mutableListOf<Map<String, String>>()
+        packs.add(mapOf("packageName" to "", "label" to "System Default"))
+        
+        for (info in allInfos) {
+            packs.add(mapOf(
+                "packageName" to info.activityInfo.packageName,
+                "label" to info.loadLabel(pm).toString()
+            ))
+        }
+        return packs
+    }
+
+    private fun loadIconPack(packageName: String?) {
+        iconPackCache.clear()
+        currentIconPack = packageName
+        
+        if (packageName.isNullOrEmpty()) return
+        
+        try {
+            val pm = packageManager
+            val res = pm.getResourcesForApplication(packageName)
+            val resId = res.getIdentifier("appfilter", "xml", packageName)
+            if (resId != 0) {
+                val parser = res.getXml(resId)
+                var eventType = parser.eventType
+                while (eventType != XmlPullParser.END_DOCUMENT) {
+                    if (eventType == XmlPullParser.START_TAG && parser.name == "item") {
+                        val component = parser.getAttributeValue(null, "component")
+                        val drawable = parser.getAttributeValue(null, "drawable")
+                        if (component != null && drawable != null) {
+                            val pkg = component.substringAfter("{").substringBefore("/")
+                            if (!iconPackCache.containsKey(pkg)) {
+                                iconPackCache[pkg] = drawable
+                            }
+                        }
+                    }
+                    eventType = parser.next()
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
     private fun getAppIcon(packageName: String): ByteArray? {
         try {
             val pm = packageManager
+            
+            if (!currentIconPack.isNullOrEmpty()) {
+                val drawableName = iconPackCache[packageName]
+                if (drawableName != null) {
+                    try {
+                        val packRes = pm.getResourcesForApplication(currentIconPack!!)
+                        val resId = packRes.getIdentifier(drawableName, "drawable", currentIconPack!!)
+                        if (resId != 0) {
+                            val drawable = packRes.getDrawable(resId, null)
+                            return drawableToByteArray(drawable)
+                        }
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
+                }
+            }
+            
             val icon = pm.getApplicationIcon(packageName)
             return drawableToByteArray(icon)
         } catch (e: PackageManager.NameNotFoundException) {
+            return null
+        } catch (e: Exception) {
             return null
         }
     }
@@ -118,7 +212,6 @@ class MainActivity: FlutterActivity() {
             bitmap
         }
         
-        // Resize icon to save memory over bridge
         val scaledBitmap = Bitmap.createScaledBitmap(bitmap, 128, 128, true)
         val stream = ByteArrayOutputStream()
         scaledBitmap.compress(Bitmap.CompressFormat.PNG, 100, stream)

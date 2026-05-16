@@ -1,4 +1,7 @@
+import 'dart:typed_data';
+import 'package:box_launcher/core/di/injection.dart';
 import 'package:box_launcher/domain/entities/app_info.dart';
+import 'package:box_launcher/domain/usecases/app_usecases.dart';
 import 'package:box_launcher/features/apps/bloc/apps_bloc.dart';
 import 'package:box_launcher/features/favorites/bloc/favorites_bloc.dart';
 import 'package:flutter/material.dart';
@@ -19,12 +22,31 @@ class AppListItem extends StatefulWidget {
 }
 
 class _AppListItemState extends State<AppListItem> {
+  static final Map<String, Uint8List> _iconCache = {};
+  Future<Uint8List?>? _iconFuture;
+
   @override
   void initState() {
     super.initState();
-    if (widget.app.icon == null) {
-      context.read<AppsBloc>().add(LoadAppIconEvent(widget.app));
+    if (widget.app.icon != null) {
+      _iconCache[widget.app.packageName] = widget.app.icon!;
+    } else if (!_iconCache.containsKey(widget.app.packageName)) {
+      _iconFuture = _loadIcon();
     }
+  }
+
+  Future<Uint8List?> _loadIcon() async {
+    try {
+      final appWithIcon = await getIt<GetAppIconUseCase>().call(widget.app);
+      if (appWithIcon.icon != null) {
+        _iconCache[widget.app.packageName] = appWithIcon.icon!;
+        if (mounted) setState(() {});
+        return appWithIcon.icon;
+      }
+    } catch (e) {
+      // ignore
+    }
+    return null;
   }
 
   void _openApp(BuildContext context) {
@@ -67,45 +89,50 @@ class _AppListItemState extends State<AppListItem> {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: () => _openApp(context),
-      onLongPress: () => _showOptions(context),
-      splashColor: Colors.white10,
-      highlightColor: Colors.white10,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 12.0),
-        child: Row(
-          children: [
-            if (widget.app.icon != null)
-              Image.memory(
-                widget.app.icon!,
+    final cachedIcon = _iconCache[widget.app.packageName];
+
+    return RepaintBoundary(
+      child: InkWell(
+        onTap: () => _openApp(context),
+        onLongPress: () => _showOptions(context),
+        splashColor: Colors.white10,
+        highlightColor: Colors.white10,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 12.0),
+          child: Row(
+            children: [
+              SizedBox(
                 width: 40,
                 height: 40,
-                gaplessPlayback: true,
-              )
-            else
-              Container(
-                width: 40,
-                height: 40,
-                decoration: const BoxDecoration(
-                  color: Colors.white12,
-                  shape: BoxShape.circle,
+                child: cachedIcon != null
+                    ? Image.memory(
+                        cachedIcon,
+                        width: 40,
+                        height: 40,
+                        gaplessPlayback: true,
+                      )
+                    : Container(
+                        decoration: const BoxDecoration(
+                          color: Colors.white12,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Text(
+                  widget.app.label,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    color: Colors.white,
+                    fontWeight: FontWeight.w400,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Text(
-                widget.app.label,
-                style: const TextStyle(
-                  fontSize: 18,
-                  color: Colors.white,
-                  fontWeight: FontWeight.w400,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

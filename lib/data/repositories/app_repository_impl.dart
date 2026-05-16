@@ -46,4 +46,20 @@ class AppRepositoryImpl implements AppRepository {
   Future<void> saveFavoritePackages(List<String> packages) {
     return localDataSource.saveFavoritePackages(packages);
   }
+
+  @override
+  Future<List<Map<String, String>>> getInstalledIconPacks() {
+    return nativeChannel.getInstalledIconPacks();
+  }
+
+  @override
+  Future<String?> getIconPack() {
+    return localDataSource.getIconPack();
+  }
+
+  @override
+  Future<bool> setIconPack(String? packageName) async {
+    await localDataSource.saveIconPack(packageName);
+    return nativeChannel.setIconPack(packageName);
+  }
 }

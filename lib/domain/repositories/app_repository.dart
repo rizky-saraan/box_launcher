@@ -6,4 +6,7 @@ abstract class AppRepository {
   Future<AppInfo> getAppIcon(AppInfo app);
   Future<List<String>> getFavoritePackages();
   Future<void> saveFavoritePackages(List<String> packages);
+  Future<List<Map<String, String>>> getInstalledIconPacks();
+  Future<String?> getIconPack();
+  Future<bool> setIconPack(String? packageName);
 }
