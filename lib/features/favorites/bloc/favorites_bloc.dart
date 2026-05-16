@@ -29,6 +29,8 @@ class FavoritesBloc extends Bloc<FavoritesEvent, FavoritesState> {
         return allApps.firstWhere((app) => app.packageName == pkg, orElse: () => AppInfo(packageName: pkg, label: 'Unknown'));
       }).where((app) => app.label != 'Unknown').toList();
 
+      favoriteApps.sort((a, b) => a.label.toLowerCase().compareTo(b.label.toLowerCase()));
+
       emit(FavoritesLoaded(favoriteApps));
     } catch (e) {
       emit(FavoritesError(e.toString()));
@@ -41,6 +43,7 @@ class FavoritesBloc extends Bloc<FavoritesEvent, FavoritesState> {
       final currentApps = List<AppInfo>.from(currentState.favorites);
       if (!currentApps.any((app) => app.packageName == event.app.packageName)) {
         currentApps.add(event.app);
+        currentApps.sort((a, b) => a.label.toLowerCase().compareTo(b.label.toLowerCase()));
         final packages = currentApps.map((e) => e.packageName).toList();
         await saveFavoritesUseCase(packages);
         emit(FavoritesLoaded(currentApps));

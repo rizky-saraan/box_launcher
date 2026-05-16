@@ -23,6 +23,7 @@ class AppsBloc extends Bloc<AppsEvent, AppsState> {
     emit(AppsLoading());
     try {
       final apps = await getAppsUseCase();
+      apps.sort((a, b) => a.label.trim().toLowerCase().compareTo(b.label.trim().toLowerCase()));
       emit(AppsLoaded(apps));
     } catch (e) {
       emit(AppsError(e.toString()));

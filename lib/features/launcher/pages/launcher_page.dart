@@ -99,7 +99,11 @@ class _LauncherPageState extends State<LauncherPage> {
 
   void _scrollToIndex(int index) {
     if (_itemScrollController.isAttached) {
-      _itemScrollController.jumpTo(index: index);
+      _itemScrollController.scrollTo(
+        index: index,
+        duration: const Duration(milliseconds: 50),
+        curve: Curves.easeInOutCubic,
+      );
     }
   }
 }
