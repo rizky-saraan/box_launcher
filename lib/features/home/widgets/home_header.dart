@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:box_launcher/core/di/injection.dart';
 import 'package:box_launcher/data/datasources/native_channel.dart';
 import 'package:box_launcher/data/datasources/local_datasource_hive.dart';
+import 'package:box_launcher/data/services/weather_service.dart';
 import 'package:box_launcher/features/apps/bloc/apps_bloc.dart';
 import 'package:box_launcher/features/apps/widgets/app_list_item.dart';
 import 'package:box_launcher/features/favorites/bloc/favorites_bloc.dart';
@@ -32,11 +33,13 @@ class _HomeHeaderState extends State<HomeHeader> {
   String _selectedClockStyle = 'digital_bold';
   String _selectedLanguage = 'id';
 
+  WeatherData? _weatherData;
+  bool _isLoadingWeather = false;
+
   @override
   void initState() {
     super.initState();
-    _loadClockStyle();
-    _loadLanguage();
+    _loadPreferences();
     
     // Timer only updates the date text every 30 seconds (low memory/CPU usage)
     _timer = Timer.periodic(const Duration(seconds: 30), (timer) {
@@ -54,11 +57,38 @@ class _HomeHeaderState extends State<HomeHeader> {
     super.dispose();
   }
 
-  Future<void> _loadClockStyle() async {
-    final style = await getIt<LocalDataSourceHive>().getClockStyle();
+  Future<void> _loadPreferences() async {
+    final db = getIt<LocalDataSourceHive>();
+    final showWeather = await db.getShowWeather();
+    final showMedia = await db.getShowMediaWidget();
+    final showBattery = await db.getShowBattery();
+    final clockStyle = await db.getClockStyle();
+    final lang = await db.getLanguageCode();
+
     if (mounted) {
       setState(() {
-        _selectedClockStyle = style;
+        _showWeather = showWeather;
+        _showMediaWidget = showMedia;
+        _showBattery = showBattery;
+        _selectedClockStyle = clockStyle;
+        _selectedLanguage = lang;
+      });
+      if (_showWeather) {
+        _fetchLiveWeather();
+      }
+    }
+  }
+
+  Future<void> _fetchLiveWeather() async {
+    if (_isLoadingWeather) return;
+    setState(() {
+      _isLoadingWeather = true;
+    });
+    final data = await WeatherService.fetchWeather();
+    if (mounted) {
+      setState(() {
+        _weatherData = data;
+        _isLoadingWeather = false;
       });
     }
   }
@@ -68,15 +98,6 @@ class _HomeHeaderState extends State<HomeHeader> {
     if (mounted) {
       setState(() {
         _selectedClockStyle = style;
-      });
-    }
-  }
-
-  Future<void> _loadLanguage() async {
-    final lang = await getIt<LocalDataSourceHive>().getLanguageCode();
-    if (mounted) {
-      setState(() {
-        _selectedLanguage = lang;
       });
     }
   }
@@ -197,9 +218,33 @@ class _HomeHeaderState extends State<HomeHeader> {
               showWeather: _showWeather,
               showMediaWidget: _showMediaWidget,
               showBattery: _showBattery,
-              onWeatherChanged: (val) => _showWeather = val,
-              onMediaWidgetChanged: (val) => _showMediaWidget = val,
-              onBatteryChanged: (val) => _showBattery = val,
+              onWeatherChanged: (val) async {
+                await getIt<LocalDataSourceHive>().saveShowWeather(val);
+                if (mounted) {
+                  setState(() {
+                    _showWeather = val;
+                  });
+                  if (val) {
+                    _fetchLiveWeather();
+                  }
+                }
+              },
+              onMediaWidgetChanged: (val) async {
+                await getIt<LocalDataSourceHive>().saveShowMediaWidget(val);
+                if (mounted) {
+                  setState(() {
+                    _showMediaWidget = val;
+                  });
+                }
+              },
+              onBatteryChanged: (val) async {
+                await getIt<LocalDataSourceHive>().saveShowBattery(val);
+                if (mounted) {
+                  setState(() {
+                    _showBattery = val;
+                  });
+                }
+              },
               onClockStylePressed: () {
                 Navigator.pop(ctx); // Close Widget Box settings first
                 _showClockStyleSelector(context);
@@ -251,13 +296,29 @@ class _HomeHeaderState extends State<HomeHeader> {
                   children: [
                     ClockWidget(selectedClockStyle: _selectedClockStyle),
                     const SizedBox(height: 4),
-                    Text(
-                      dateString,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.white70,
-                      ),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Text(
+                          dateString,
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.white70,
+                          ),
+                        ),
+                        if (_showWeather && _weatherData != null) ...[
+                          const SizedBox(width: 8),
+                          Text(
+                            '${_weatherData!.icon} ${(_weatherData!.temperature).toStringAsFixed(0)}°',
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.white70,
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
                   ],
                 ),
