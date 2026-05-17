@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'package:box_launcher/core/di/injection.dart';
+import 'package:box_launcher/data/datasources/native_channel.dart';
 import 'package:box_launcher/features/apps/widgets/app_list_item.dart';
 import 'package:box_launcher/features/favorites/bloc/favorites_bloc.dart';
 import 'package:box_launcher/features/icon_pack/bloc/icon_pack_bloc.dart';
@@ -148,8 +150,27 @@ class _HomeHeaderState extends State<HomeHeader> {
                     const Padding(
                       padding: EdgeInsets.all(16.0),
                       child: Text(
-                        'Select Icon Pack',
+                        'Appearance Settings',
                         style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    ListTile(
+                      leading: const Icon(Icons.wallpaper, color: Colors.white),
+                      title: const Text('Change Wallpaper', style: TextStyle(color: Colors.white)),
+                      onTap: () {
+                        Navigator.pop(context);
+                        getIt<NativeChannel>().openWallpaperPicker();
+                      },
+                    ),
+                    const Divider(color: Colors.white10),
+                    const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          'Icon Pack',
+                          style: TextStyle(color: Colors.white54, fontSize: 14),
+                        ),
                       ),
                     ),
                     Flexible(

@@ -1,5 +1,6 @@
 package com.example.box_launcher
 
+import android.app.WallpaperManager
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
@@ -7,6 +8,7 @@ import android.graphics.Canvas
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import io.flutter.embedding.android.FlutterActivity
+import io.flutter.embedding.android.TransparencyMode
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 import java.io.ByteArrayOutputStream
@@ -14,6 +16,10 @@ import kotlinx.coroutines.*
 import org.xmlpull.v1.XmlPullParser
 
 class MainActivity: FlutterActivity() {
+    override fun getTransparencyMode(): TransparencyMode {
+        return TransparencyMode.transparent
+    }
+
     private val CHANNEL = "com.box_launcher/apps"
     private val scope = CoroutineScope(Dispatchers.IO + Job())
 
@@ -74,6 +80,16 @@ class MainActivity: FlutterActivity() {
                             result.success(true)
                         }
                     }
+                }
+                "openWallpaperPicker" -> {
+                    val intent = Intent(Intent.ACTION_SET_WALLPAPER)
+                    startActivity(Intent.createChooser(intent, "Select Wallpaper"))
+                    result.success(true)
+                }
+                "updateWallpaperOffset" -> {
+                    val offset = call.argument<Double>("offset") ?: 0.0
+                    updateWallpaperOffset(offset.toFloat())
+                    result.success(true)
                 }
                 else -> {
                     result.notImplemented()
@@ -216,6 +232,24 @@ class MainActivity: FlutterActivity() {
         val stream = ByteArrayOutputStream()
         scaledBitmap.compress(Bitmap.CompressFormat.PNG, 100, stream)
         return stream.toByteArray()
+    }
+
+    private fun updateWallpaperOffset(offset: Float) {
+        try {
+            val wallpaperManager = WallpaperManager.getInstance(this)
+            val windowToken = window.decorView.windowToken
+            if (windowToken != null) {
+                runOnUiThread {
+                    try {
+                        wallpaperManager.setWallpaperOffsets(windowToken, 0.5f, offset)
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     override fun onDestroy() {

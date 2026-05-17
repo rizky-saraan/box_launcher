@@ -1,4 +1,3 @@
-import 'dart:typed_data';
 import 'package:flutter/services.dart';
 import 'package:injectable/injectable.dart';
 
@@ -35,5 +34,17 @@ class NativeChannel {
   Future<bool> setIconPack(String? packageName) async {
     final bool? result = await _channel.invokeMethod('setIconPack', {'packageName': packageName});
     return result ?? false;
+  }
+
+  Future<void> openWallpaperPicker() async {
+    await _channel.invokeMethod('openWallpaperPicker');
+  }
+
+  Future<void> updateWallpaperOffset(double offset) async {
+    try {
+      await _channel.invokeMethod('updateWallpaperOffset', {'offset': offset});
+    } catch (e) {
+      // ignore
+    }
   }
 }

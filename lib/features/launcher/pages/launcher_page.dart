@@ -1,3 +1,5 @@
+import 'package:box_launcher/core/di/injection.dart';
+import 'package:box_launcher/data/datasources/native_channel.dart';
 import 'package:box_launcher/features/apps/bloc/apps_bloc.dart';
 import 'package:box_launcher/features/apps/widgets/alphabet_sidebar.dart';
 import 'package:box_launcher/features/apps/widgets/app_list_item.dart';
@@ -20,8 +22,45 @@ class _LauncherPageState extends State<LauncherPage> {
   final ItemScrollController _itemScrollController = ItemScrollController();
   final ItemPositionsListener _itemPositionsListener =
       ItemPositionsListener.create();
+  final ValueNotifier<double> _scrollProgressNotifier = ValueNotifier<double>(0.0);
       
   bool _isSearching = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _itemPositionsListener.itemPositions.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _itemPositionsListener.itemPositions.removeListener(_onScroll);
+    _scrollProgressNotifier.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (!mounted) return;
+    final positions = _itemPositionsListener.itemPositions.value;
+    if (positions.isEmpty) return;
+
+    final firstVisible = positions.reduce((a, b) => a.index < b.index ? a : b);
+    
+    final appsBloc = context.read<AppsBloc>();
+    final appsState = appsBloc.state;
+    if (appsState is AppsLoaded) {
+      final totalItems = appsState.apps.length + 1;
+      final scrolledCount = firstVisible.index - firstVisible.itemLeadingEdge;
+      double progress = scrolledCount / totalItems;
+      progress = progress.clamp(0.0, 1.0);
+      
+      _scrollProgressNotifier.value = progress;
+      
+      // Update system wallpaper scroll offset (y-axis)
+      // 1.0 - progress works perfectly as it moves the wallpaper with scrolling down.
+      getIt<NativeChannel>().updateWallpaperOffset(1.0 - progress);
+    }
+  }
 
   void _startSearch() {
     setState(() {
@@ -65,6 +104,17 @@ class _LauncherPageState extends State<LauncherPage> {
         },
         child: Stack(
           children: [
+            // Dynamic Background overlay for premium readability when scrolled
+            ValueListenableBuilder<double>(
+              valueListenable: _scrollProgressNotifier,
+              builder: (context, progress, child) {
+                return Positioned.fill(
+                  child: Container(
+                    color: Colors.black.withOpacity(progress * 0.4),
+                  ),
+                );
+              },
+            ),
             SafeArea(
               child: Row(
                 children: [
