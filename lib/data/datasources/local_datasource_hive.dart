@@ -33,4 +33,27 @@ class LocalDataSourceHive {
       await box.put(_iconPackKey, packageName);
     }
   }
+
+  static const String _clockStyleKey = 'clock_style';
+  static const String _languageKey = 'selected_language';
+
+  Future<String> getClockStyle() async {
+    final box = await Hive.openBox(_boxName);
+    return box.get(_clockStyleKey) as String? ?? 'digital_bold';
+  }
+
+  Future<void> saveClockStyle(String style) async {
+    final box = await Hive.openBox(_boxName);
+    await box.put(_clockStyleKey, style);
+  }
+
+  Future<String> getLanguageCode() async {
+    final box = await Hive.openBox(_boxName);
+    return box.get(_languageKey) as String? ?? 'id';
+  }
+
+  Future<void> saveLanguageCode(String langCode) async {
+    final box = await Hive.openBox(_boxName);
+    await box.put(_languageKey, langCode);
+  }
 }
