@@ -35,19 +35,16 @@ class _HomeHeaderState extends State<HomeHeader> {
 
   WeatherData? _weatherData;
   bool _isLoadingWeather = false;
+  int _batteryLevel = 100;
 
   @override
   void initState() {
     super.initState();
     _loadPreferences();
     
-    // Timer only updates the date text every 30 seconds (low memory/CPU usage)
+    // Timer only updates the date text and battery level every 30 seconds (low memory/CPU usage)
     _timer = Timer.periodic(const Duration(seconds: 30), (timer) {
-      if (mounted) {
-        setState(() {
-          _now = DateTime.now();
-        });
-      }
+      _updateBatteryAndDate();
     });
   }
 
@@ -65,6 +62,11 @@ class _HomeHeaderState extends State<HomeHeader> {
     final clockStyle = await db.getClockStyle();
     final lang = await db.getLanguageCode();
 
+    int batteryLevel = 100;
+    if (showBattery) {
+      batteryLevel = await getIt<NativeChannel>().getBatteryLevel();
+    }
+
     if (mounted) {
       setState(() {
         _showWeather = showWeather;
@@ -72,10 +74,25 @@ class _HomeHeaderState extends State<HomeHeader> {
         _showBattery = showBattery;
         _selectedClockStyle = clockStyle;
         _selectedLanguage = lang;
+        _batteryLevel = batteryLevel;
       });
       if (_showWeather) {
         _fetchLiveWeather();
       }
+    }
+  }
+
+  Future<void> _updateBatteryAndDate() async {
+    final now = DateTime.now();
+    int batteryLevel = _batteryLevel;
+    if (_showBattery) {
+      batteryLevel = await getIt<NativeChannel>().getBatteryLevel();
+    }
+    if (mounted) {
+      setState(() {
+        _now = now;
+        _batteryLevel = batteryLevel;
+      });
     }
   }
 
@@ -239,23 +256,36 @@ class _HomeHeaderState extends State<HomeHeader> {
               },
               onBatteryChanged: (val) async {
                 await getIt<LocalDataSourceHive>().saveShowBattery(val);
+                int batteryLevel = _batteryLevel;
+                if (val) {
+                  batteryLevel = await getIt<NativeChannel>().getBatteryLevel();
+                }
                 if (mounted) {
                   setState(() {
                     _showBattery = val;
+                    _batteryLevel = batteryLevel;
                   });
                 }
               },
               onClockStylePressed: () {
-                Navigator.pop(ctx); // Close Widget Box settings first
+                if (ctx.mounted) {
+                  try {
+                    Navigator.pop(ctx);
+                  } catch (_) {}
+                }
                 _showClockStyleSelector(context);
               },
               onWallpaperPickerPressed: () {
-                Navigator.pop(ctx);
+                if (ctx.mounted) {
+                  try {
+                    Navigator.pop(ctx);
+                  } catch (_) {}
+                }
                 getIt<NativeChannel>().openWallpaperPicker();
               },
-              onIconPackPressed: () {
+              onIconPackPressed: (settingsContext) {
                 if (state is IconPackLoaded) {
-                  _showIconPackSelector(context, state);
+                  _showIconPackSelector(settingsContext, state);
                 }
               },
               iconPackName: iconPackName,
@@ -296,8 +326,10 @@ class _HomeHeaderState extends State<HomeHeader> {
                   children: [
                     ClockWidget(selectedClockStyle: _selectedClockStyle),
                     const SizedBox(height: 4),
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
+                    Wrap(
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      spacing: 8,
+                      runSpacing: 4,
                       children: [
                         Text(
                           dateString,
@@ -307,8 +339,16 @@ class _HomeHeaderState extends State<HomeHeader> {
                             color: Colors.white70,
                           ),
                         ),
-                        if (_showWeather && _weatherData != null) ...[
-                          const SizedBox(width: 8),
+                        if (_showBattery)
+                          Text(
+                            '$_batteryLevel%',
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.white70,
+                            ),
+                          ),
+                        if (_showWeather && _weatherData != null)
                           Text(
                             '${_weatherData!.icon} ${(_weatherData!.temperature).toStringAsFixed(0)}°',
                             style: const TextStyle(
@@ -317,7 +357,6 @@ class _HomeHeaderState extends State<HomeHeader> {
                               color: Colors.white70,
                             ),
                           ),
-                        ],
                       ],
                     ),
                   ],

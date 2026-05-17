@@ -1,6 +1,8 @@
 package com.example.box_launcher
 
 import android.app.WallpaperManager
+import android.content.Context
+import android.os.BatteryManager
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
@@ -90,6 +92,11 @@ class MainActivity: FlutterActivity() {
                     val offset = call.argument<Double>("offset") ?: 0.0
                     updateWallpaperOffset(offset.toFloat())
                     result.success(true)
+                }
+                "getBatteryLevel" -> {
+                    val batteryManager = getSystemService(Context.BATTERY_SERVICE) as BatteryManager
+                    val level = batteryManager.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
+                    result.success(level)
                 }
                 else -> {
                     result.notImplemented()

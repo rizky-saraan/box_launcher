@@ -98,17 +98,20 @@ class _AppListItemState extends State<AppListItem> {
         splashColor: Colors.white10,
         highlightColor: Colors.white10,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 12.0),
+          padding: EdgeInsets.symmetric(
+            horizontal: widget.isFavoriteList ? 0.0 : 32.0,
+            vertical: 8.0,
+          ),
           child: Row(
             children: [
               SizedBox(
-                width: 40,
-                height: 40,
+                width: 32,
+                height: 32,
                 child: cachedIcon != null
                     ? Image.memory(
                         cachedIcon,
-                        width: 40,
-                        height: 40,
+                        width: 32,
+                        height: 32,
                         gaplessPlayback: true,
                       )
                     : Container(
@@ -123,7 +126,7 @@ class _AppListItemState extends State<AppListItem> {
                 child: Text(
                   widget.app.label,
                   style: const TextStyle(
-                    fontSize: 18,
+                    fontSize: 15,
                     color: Colors.white,
                     fontWeight: FontWeight.w400,
                   ),

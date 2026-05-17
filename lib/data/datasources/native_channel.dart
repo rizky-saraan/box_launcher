@@ -47,4 +47,13 @@ class NativeChannel {
       // ignore
     }
   }
+
+  Future<int> getBatteryLevel() async {
+    try {
+      final int? level = await _channel.invokeMethod('getBatteryLevel');
+      return level ?? 100;
+    } catch (e) {
+      return 100;
+    }
+  }
 }
