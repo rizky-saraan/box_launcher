@@ -26,6 +26,9 @@ class _LauncherPageState extends State<LauncherPage> with WidgetsBindingObserver
   final ValueNotifier<double> _scrollProgressNotifier = ValueNotifier<double>(0.0);
       
   bool _isSearching = false;
+  String? _activeScrubLetter;
+  int _targetScrollIndex = 0;
+  bool _isFadingToTop = false;
 
   @override
   void initState() {
@@ -52,13 +55,14 @@ class _LauncherPageState extends State<LauncherPage> with WidgetsBindingObserver
         _stopSearch();
       }
       if (!_isAtTop) {
-        _scrollToTop();
+        _jumpToIndex(0);
       }
     }
   }
 
   void _onScroll() {
     if (!mounted) return;
+    if (_activeScrubLetter != null) return;
     final positions = _itemPositionsListener.itemPositions.value;
     if (positions.isEmpty) return;
 
@@ -67,7 +71,7 @@ class _LauncherPageState extends State<LauncherPage> with WidgetsBindingObserver
     final appsBloc = context.read<AppsBloc>();
     final appsState = appsBloc.state;
     if (appsState is AppsLoaded) {
-      final totalItems = appsState.apps.length + 1;
+      final totalItems = appsState.apps.length + 2;
       final scrolledCount = firstVisible.index - firstVisible.itemLeadingEdge;
       double progress = scrolledCount / totalItems;
       progress = progress.clamp(0.0, 1.0);
@@ -117,7 +121,7 @@ class _LauncherPageState extends State<LauncherPage> with WidgetsBindingObserver
           }
 
           if (!_isAtTop) {
-            _scrollToTop();
+            _fadeToTop();
           }
         },
         child: Stack(
@@ -134,8 +138,20 @@ class _LauncherPageState extends State<LauncherPage> with WidgetsBindingObserver
               },
             ),
             SafeArea(
-              child: Row(
-                children: [
+              child: AnimatedOpacity(
+                opacity: _isFadingToTop ? 0.0 : 1.0,
+                duration: const Duration(milliseconds: 150),
+                curve: Curves.easeInOut,
+                onEnd: () {
+                  if (_isFadingToTop) {
+                    _jumpToIndex(0);
+                    setState(() {
+                      _isFadingToTop = false;
+                    });
+                  }
+                },
+                child: Row(
+                  children: [
                   Expanded(
                     child: BlocBuilder<AppsBloc, AppsState>(
                       builder: (context, state) {
@@ -150,16 +166,50 @@ class _LauncherPageState extends State<LauncherPage> with WidgetsBindingObserver
                           } else {
                             child = ScrollablePositionedList.builder(
                               key: const ValueKey('all_apps'),
-                              itemCount: state.apps.length + 1,
+                              itemCount: state.apps.length + 2,
                               itemScrollController: _itemScrollController,
                               itemPositionsListener: _itemPositionsListener,
                               physics: const BouncingScrollPhysics(),
                               itemBuilder: (context, index) {
                                 if (index == 0) {
-                                  return const HomeHeader();
+                                  final isMatch = _activeScrubLetter == null;
+                                  return AnimatedOpacity(
+                                    opacity: isMatch ? 1.0 : 0.0,
+                                    duration: const Duration(milliseconds: 250),
+                                    curve: Curves.easeInOut,
+                                    child: IgnorePointer(
+                                      ignoring: !isMatch,
+                                      child: const HomeHeader(),
+                                    ),
+                                  );
                                 }
+                                
+                                if (index == state.apps.length + 1) {
+                                  return SizedBox(
+                                    height: MediaQuery.of(context).size.height * 0.7,
+                                  );
+                                }
+                                
                                 final app = state.apps[index - 1];
-                                return AppListItem(app: app);
+                                final isMatch = _activeScrubLetter == null ||
+                                    app.label.toUpperCase().startsWith(_activeScrubLetter!);
+
+                                return AnimatedOpacity(
+                                  opacity: isMatch ? 1.0 : 0.0,
+                                  duration: const Duration(milliseconds: 250),
+                                  curve: Curves.easeInOut,
+                                  child: IgnorePointer(
+                                    ignoring: !isMatch,
+                                    child: index == 1
+                                        ? Padding(
+                                            padding: EdgeInsets.only(
+                                              top: MediaQuery.of(context).size.height * 0.25,
+                                            ),
+                                            child: AppListItem(app: app),
+                                          )
+                                        : AppListItem(app: app),
+                                  ),
+                                );
                               },
                             );
                           }
@@ -185,7 +235,20 @@ class _LauncherPageState extends State<LauncherPage> with WidgetsBindingObserver
                           return AlphabetSidebar(
                             apps: state.apps,
                             onLetterScrubbed: (index) {
+                              // Handled by onLetterSelected
+                            },
+                            onLetterSelected: (letter, index) {
+                              setState(() {
+                                _activeScrubLetter = letter;
+                                _targetScrollIndex = index + 1;
+                              });
                               _scrollToIndex(index + 1);
+                            },
+                            onScrubEnd: () {
+                              setState(() {
+                                _activeScrubLetter = null;
+                              });
+                              _jumpToIndex(_targetScrollIndex);
                             },
                           );
                         }
@@ -195,6 +258,7 @@ class _LauncherPageState extends State<LauncherPage> with WidgetsBindingObserver
                 ],
               ),
             ),
+          ),
           ],
         ),
       ),
@@ -225,24 +289,38 @@ class _LauncherPageState extends State<LauncherPage> with WidgetsBindingObserver
     );
   }
 
-  void _scrollToIndex(int index) {
+  void _scrollToIndex(int index, {Duration duration = const Duration(milliseconds: 50)}) {
     if (_itemScrollController.isAttached) {
+      double alignment = 0.0;
+      if (index > 1) {
+        alignment = 0.25; // Align items somewhat in the middle of the screen
+      }
       _itemScrollController.scrollTo(
         index: index,
-        duration: const Duration(milliseconds: 50),
-        curve: Curves.easeInOutCubic,
+        alignment: alignment,
+        duration: duration,
+        curve: Curves.easeOutCubic,
       );
     }
   }
 
-  void _scrollToTop() {
+  void _jumpToIndex(int index) {
     if (_itemScrollController.isAttached) {
-      _itemScrollController.scrollTo(
-        index: 0,
-        duration: const Duration(milliseconds: 250),
-        curve: Curves.easeOutCubic,
+      double alignment = 0.0;
+      if (index > 1) {
+        alignment = 0.25; // Align items somewhat in the middle of the screen
+      }
+      _itemScrollController.jumpTo(
+        index: index,
+        alignment: alignment,
       );
     }
+  }
+
+  void _fadeToTop() {
+    setState(() {
+      _isFadingToTop = true;
+    });
   }
 
   Widget _buildSearchResults(List<AppInfo> allApps) {
@@ -258,22 +336,28 @@ class _LauncherPageState extends State<LauncherPage> with WidgetsBindingObserver
         Expanded(
           child: BlocBuilder<SearchBloc, SearchState>(
             builder: (context, searchState) {
-              List<AppInfo> appsToShow = allApps;
+              if (searchState is SearchInitial) {
+                return const SizedBox.shrink(); // Hide all apps when search query is empty
+              }
               if (searchState is SearchLoaded) {
-                appsToShow = searchState.results;
+                final appsToShow = searchState.results;
                 if (appsToShow.isEmpty) {
                   return const Center(
-                      child: Text("No apps found",
-                          style: TextStyle(color: Colors.white54)));
+                    child: Text(
+                      "No apps found",
+                      style: TextStyle(color: Colors.white54),
+                    ),
+                  );
                 }
+                return ListView.builder(
+                  physics: const BouncingScrollPhysics(),
+                  itemCount: appsToShow.length,
+                  itemBuilder: (context, index) {
+                    return AppListItem(app: appsToShow[index]);
+                  },
+                );
               }
-              return ListView.builder(
-                physics: const BouncingScrollPhysics(),
-                itemCount: appsToShow.length,
-                itemBuilder: (context, index) {
-                  return AppListItem(app: appsToShow[index]);
-                },
-              );
+              return const SizedBox.shrink();
             },
           ),
         ),

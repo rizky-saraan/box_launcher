@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 import 'package:box_launcher/core/di/injection.dart';
+import 'package:box_launcher/data/datasources/local_datasource_hive.dart';
 import 'package:box_launcher/domain/entities/app_info.dart';
 import 'package:box_launcher/domain/usecases/app_usecases.dart';
 import 'package:box_launcher/features/apps/bloc/apps_bloc.dart';
@@ -25,7 +26,6 @@ class AppListItem extends StatefulWidget {
 
 class _AppListItemState extends State<AppListItem> {
   static final Map<String, Uint8List> _iconCache = {};
-  Future<Uint8List?>? _iconFuture;
 
   @override
   void initState() {
@@ -33,7 +33,7 @@ class _AppListItemState extends State<AppListItem> {
     if (widget.app.icon != null) {
       _iconCache[widget.app.packageName] = widget.app.icon!;
     } else if (!_iconCache.containsKey(widget.app.packageName)) {
-      _iconFuture = _loadIcon();
+      _loadIcon();
     }
   }
 
@@ -55,7 +55,10 @@ class _AppListItemState extends State<AppListItem> {
     context.read<AppsBloc>().add(OpenAppEvent(widget.app.packageName));
   }
 
-  void _showOptions(BuildContext context) {
+  void _showOptions(BuildContext context) async {
+    final lang = await getIt<LocalDataSourceHive>().getLanguageCode();
+    if (!context.mounted) return;
+
     showModalBottomSheet(
       context: context,
       backgroundColor: const Color(0xFF1E1E1E),
@@ -70,11 +73,13 @@ class _AppListItemState extends State<AppListItem> {
               ListTile(
                 leading: const Icon(Icons.star, color: Colors.white),
                 title: Text(
-                  widget.isFavoriteList ? 'Remove from favorites' : 'Add to favorites',
+                  widget.isFavoriteList
+                      ? (lang == 'id' ? 'Hapus dari favorit' : 'Remove from favorites')
+                      : (lang == 'id' ? 'Tambah ke favorit' : 'Add to favorites'),
                   style: const TextStyle(color: Colors.white),
                 ),
                 onTap: () {
-                  Navigator.pop(context);
+                  Navigator.pop(ctx);
                   if (widget.isFavoriteList) {
                     context.read<FavoritesBloc>().add(RemoveFavoriteEvent(widget.app));
                   } else {

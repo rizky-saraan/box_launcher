@@ -4,11 +4,15 @@ import 'package:flutter/material.dart';
 class AlphabetSidebar extends StatefulWidget {
   final List<AppInfo> apps;
   final ValueChanged<int> onLetterScrubbed;
+  final Function(String letter, int index)? onLetterSelected;
+  final VoidCallback? onScrubEnd;
 
   const AlphabetSidebar({
     super.key,
     required this.apps,
     required this.onLetterScrubbed,
+    this.onLetterSelected,
+    this.onScrubEnd,
   });
 
   @override
@@ -36,12 +40,18 @@ class _AlphabetSidebarState extends State<AlphabetSidebar> {
               _currentLetter = null;
               _touchY = null;
             });
+            if (widget.onScrubEnd != null) {
+              widget.onScrubEnd!();
+            }
           },
           onVerticalDragCancel: () {
             setState(() {
               _currentLetter = null;
               _touchY = null;
             });
+            if (widget.onScrubEnd != null) {
+              widget.onScrubEnd!();
+            }
           },
           child: Container(
             width: 80, // Increased width to accommodate the curve
@@ -115,6 +125,9 @@ class _AlphabetSidebarState extends State<AlphabetSidebar> {
 
       if (appIndex != -1) {
         widget.onLetterScrubbed(appIndex);
+        if (widget.onLetterSelected != null) {
+          widget.onLetterSelected!(letter, appIndex);
+        }
       }
     }
   }

@@ -1,3 +1,4 @@
+import 'package:box_launcher/features/favorites/pages/edit_favorites_page.dart';
 import 'package:box_launcher/features/home/widgets/settings/box_launcher_settings_page.dart';
 import 'package:flutter/material.dart';
 
@@ -176,7 +177,15 @@ class _WidgetBoxSettingsSheetState extends State<WidgetBoxSettingsSheet> {
                     style: TextStyle(
                         color: textColor, fontWeight: FontWeight.w500)),
                 trailing: Icon(Icons.chevron_right, color: iconColor),
-                onTap: () {},
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const EditFavoritesPage(),
+                    ),
+                  );
+                },
               ),
               ListTile(
                 contentPadding: const EdgeInsets.symmetric(horizontal: 24.0),

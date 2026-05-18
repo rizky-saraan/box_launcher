@@ -22,3 +22,10 @@ class RemoveFavoriteEvent extends FavoritesEvent {
   @override
   List<Object> get props => [app];
 }
+
+class SetFavoritesEvent extends FavoritesEvent {
+  final List<AppInfo> favorites;
+  const SetFavoritesEvent(this.favorites);
+  @override
+  List<Object> get props => [favorites];
+}

@@ -14,12 +14,18 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
   }
 
   void _onSearchQueryChanged(SearchQueryChanged event, Emitter<SearchState> emit) {
-    if (event.query.isEmpty) {
+    final trimmedQuery = event.query.trim().toLowerCase();
+    if (trimmedQuery.isEmpty) {
       emit(SearchInitial());
       return;
     }
     final filtered = event.allApps.where((app) {
-      return app.label.toLowerCase().contains(event.query.toLowerCase());
+      final appLabel = app.label.toLowerCase();
+      if (trimmedQuery.length == 1) {
+        return appLabel.startsWith(trimmedQuery);
+      } else {
+        return appLabel.contains(trimmedQuery);
+      }
     }).toList();
     emit(SearchLoaded(filtered, event.query));
   }

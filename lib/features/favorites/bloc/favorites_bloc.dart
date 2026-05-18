@@ -17,6 +17,7 @@ class FavoritesBloc extends Bloc<FavoritesEvent, FavoritesState> {
     on<LoadFavoritesEvent>(_onLoadFavorites);
     on<AddFavoriteEvent>(_onAddFavorite);
     on<RemoveFavoriteEvent>(_onRemoveFavorite);
+    on<SetFavoritesEvent>(_onSetFavorites);
   }
 
   Future<void> _onLoadFavorites(LoadFavoritesEvent event, Emitter<FavoritesState> emit) async {
@@ -29,7 +30,7 @@ class FavoritesBloc extends Bloc<FavoritesEvent, FavoritesState> {
         return allApps.firstWhere((app) => app.packageName == pkg, orElse: () => AppInfo(packageName: pkg, label: 'Unknown'));
       }).where((app) => app.label != 'Unknown').toList();
 
-      favoriteApps.sort((a, b) => a.label.toLowerCase().compareTo(b.label.toLowerCase()));
+      // Removed sorting to preserve the custom user-defined drag-and-drop order
 
       emit(FavoritesLoaded(favoriteApps));
     } catch (e) {
@@ -43,7 +44,6 @@ class FavoritesBloc extends Bloc<FavoritesEvent, FavoritesState> {
       final currentApps = List<AppInfo>.from(currentState.favorites);
       if (!currentApps.any((app) => app.packageName == event.app.packageName)) {
         currentApps.add(event.app);
-        currentApps.sort((a, b) => a.label.toLowerCase().compareTo(b.label.toLowerCase()));
         final packages = currentApps.map((e) => e.packageName).toList();
         await saveFavoritesUseCase(packages);
         emit(FavoritesLoaded(currentApps));
@@ -59,6 +59,16 @@ class FavoritesBloc extends Bloc<FavoritesEvent, FavoritesState> {
       final packages = currentApps.map((e) => e.packageName).toList();
       await saveFavoritesUseCase(packages);
       emit(FavoritesLoaded(currentApps));
+    }
+  }
+
+  Future<void> _onSetFavorites(SetFavoritesEvent event, Emitter<FavoritesState> emit) async {
+    try {
+      final packages = event.favorites.map((e) => e.packageName).toList();
+      await saveFavoritesUseCase(packages);
+      emit(FavoritesLoaded(event.favorites));
+    } catch (e) {
+      emit(FavoritesError(e.toString()));
     }
   }
 }

@@ -13,6 +13,18 @@ import 'package:intl/date_symbol_data_local.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Intercept and quietly filter out the known internal Flutter framework hardware keyboard state assertion bug
+  FlutterError.onError = (FlutterErrorDetails details) {
+    final exceptionStr = details.exception.toString();
+    if (exceptionStr.contains("hardware_keyboard.dart") ||
+        exceptionStr.contains("physical key is not pressed")) {
+      // Quietly ignore this harmless framework keyboard keyup assertion mismatch
+      return;
+    }
+    FlutterError.presentError(details);
+  };
+
   await Hive.initFlutter();
   await initializeDateFormatting('id_ID', null);
   await initializeDateFormatting('en_US', null);
