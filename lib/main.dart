@@ -1,5 +1,6 @@
 import 'package:box_launcher/core/di/injection.dart';
 import 'package:box_launcher/core/theme/bloc/theme_bloc.dart';
+import 'package:box_launcher/core/theme/font_manager.dart';
 import 'package:box_launcher/features/apps/bloc/apps_bloc.dart';
 import 'package:box_launcher/features/favorites/bloc/favorites_bloc.dart';
 import 'package:box_launcher/features/launcher/bloc/launcher_bloc.dart';
@@ -31,6 +32,9 @@ void main() async {
   await initializeDateFormatting('en_US', null);
   configureDependencies();
 
+  // Initialize the FontManager to load the active font and register custom OTF/TTF files
+  await FontManager.initialize();
+
   // Initialize the native channel with the selected icon pack BEFORE launcher loads UI and icons!
   try {
     final activeIconPack = await getIt<GetIconPackUseCase>().call();
@@ -58,20 +62,32 @@ class BoxLauncherApp extends StatelessWidget {
       ],
       child: BlocBuilder<ThemeBloc, ThemeState>(
         builder: (context, state) {
-          return MaterialApp(
-            title: 'Box Launcher',
-            theme: ThemeData.light(useMaterial3: true).copyWith(
-              scaffoldBackgroundColor: Colors.transparent,
-            ),
-            darkTheme: ThemeData.dark(useMaterial3: true).copyWith(
-              scaffoldBackgroundColor: Colors.transparent,
-              textTheme: Typography.material2021().white.apply(
-                fontFamily: 'Roboto',
-              ),
-            ),
-            themeMode: state.isDarkMode ? ThemeMode.dark : ThemeMode.light,
-            debugShowCheckedModeBanner: false,
-            home: const LauncherPage(),
+          return ValueListenableBuilder<String>(
+            valueListenable: FontManager.activeFontNotifier,
+            builder: (context, activeFont, child) {
+              // Get core Material TextThemes
+              final TextTheme baseTextThemeLight = Typography.material2021().black;
+              final TextTheme baseTextThemeDark = Typography.material2021().white;
+
+              // Apply dynamic (built-in Google Font or loaded custom family) text themes
+              final TextTheme dynamicTextThemeLight = FontManager.applyDynamicFontToTextTheme(baseTextThemeLight);
+              final TextTheme dynamicTextThemeDark = FontManager.applyDynamicFontToTextTheme(baseTextThemeDark);
+
+              return MaterialApp(
+                title: 'Box Launcher',
+                theme: ThemeData.light(useMaterial3: true).copyWith(
+                  scaffoldBackgroundColor: Colors.transparent,
+                  textTheme: dynamicTextThemeLight,
+                ),
+                darkTheme: ThemeData.dark(useMaterial3: true).copyWith(
+                  scaffoldBackgroundColor: Colors.transparent,
+                  textTheme: dynamicTextThemeDark,
+                ),
+                themeMode: state.isDarkMode ? ThemeMode.dark : ThemeMode.light,
+                debugShowCheckedModeBanner: false,
+                home: const LauncherPage(),
+              );
+            },
           );
         },
       ),

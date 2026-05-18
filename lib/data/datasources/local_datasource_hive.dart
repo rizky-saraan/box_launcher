@@ -138,6 +138,8 @@ class LocalDataSourceHive {
   }
 
   static const String _themeBundleKey = 'active_theme_bundle';
+  static const String _activeFontKey = 'active_font_family';
+  static const String _customFontsMapKey = 'custom_fonts_map';
 
   Future<String> getActiveThemeBundle() async {
     final box = await Hive.openBox(_boxName);
@@ -147,5 +149,27 @@ class LocalDataSourceHive {
   Future<void> saveActiveThemeBundle(String bundleId) async {
     final box = await Hive.openBox(_boxName);
     await box.put(_themeBundleKey, bundleId);
+  }
+
+  Future<String> getActiveFont() async {
+    final box = await Hive.openBox(_boxName);
+    return box.get(_activeFontKey) as String? ?? 'Default';
+  }
+
+  Future<void> saveActiveFont(String fontFamily) async {
+    final box = await Hive.openBox(_boxName);
+    await box.put(_activeFontKey, fontFamily);
+  }
+
+  Future<Map<String, String>> getCustomFonts() async {
+    final box = await Hive.openBox(_boxName);
+    final map = box.get(_customFontsMapKey);
+    if (map == null) return {};
+    return Map<String, String>.from(map);
+  }
+
+  Future<void> saveCustomFonts(Map<String, String> fontsMap) async {
+    final box = await Hive.openBox(_boxName);
+    await box.put(_customFontsMapKey, fontsMap);
   }
 }

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:box_launcher/features/home/widgets/settings/box_launcher_size_settings_page.dart';
-import 'package:box_launcher/features/apps/widgets/app_list_item.dart';
+import 'package:box_launcher/features/home/widgets/settings/box_launcher_appearance_settings_page.dart';
 
 class BoxLauncherSettingsPage extends StatefulWidget {
   final VoidCallback onWallpaperPickerPressed;
@@ -143,52 +142,47 @@ class _BoxLauncherSettingsPageState extends State<BoxLauncherSettingsPage> {
               ),
               child: Column(
                 children: [
+                  // 1. Tampilan (Sub-Menu)
                   ListTile(
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 4.0),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 6.0),
                     leading: Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
                         color: Colors.blue.withOpacity(0.1),
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(Icons.wallpaper_outlined, color: Colors.blue, size: 22),
+                      child: const Icon(Icons.palette_outlined, color: Colors.blue, size: 22),
                     ),
                     title: Text(
-                      isIndonesian ? 'Ubah Wallpaper' : 'Change Wallpaper',
+                      isIndonesian ? 'Tampilan' : 'Appearance',
                       style: TextStyle(color: textColor, fontWeight: FontWeight.w600, fontSize: 16),
                     ),
                     subtitle: Text(
-                      isIndonesian ? 'Ganti latar belakang layar' : 'Change screen background',
+                      isIndonesian
+                          ? 'Ubah wallpaper, icon pack, ukuran & tema bundle'
+                          : 'Change wallpaper, icon pack, size & theme bundle',
                       style: TextStyle(color: subColor, fontSize: 13),
                     ),
                     trailing: Icon(Icons.chevron_right, color: iconColor),
-                    onTap: widget.onWallpaperPickerPressed,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => BoxLauncherAppearanceSettingsPage(
+                            onWallpaperPickerPressed: widget.onWallpaperPickerPressed,
+                            onIconPackPressed: widget.onIconPackPressed,
+                            iconPackName: widget.iconPackName,
+                            selectedLanguage: _currentLanguage,
+                          ),
+                        ),
+                      );
+                    },
                   ),
                   Divider(height: 1, thickness: 1, color: dividerColor),
+
+                  // 2. Pilih Bahasa
                   ListTile(
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 4.0),
-                    leading: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.purple.withOpacity(0.1),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(Icons.palette_outlined, color: Colors.purple, size: 22),
-                    ),
-                    title: Text(
-                      isIndonesian ? 'Pilih Icon Pack' : 'Select Icon Pack',
-                      style: TextStyle(color: textColor, fontWeight: FontWeight.w600, fontSize: 16),
-                    ),
-                    subtitle: Text(
-                      widget.iconPackName.isNotEmpty ? widget.iconPackName : (isIndonesian ? 'Sistem Default' : 'System Default'),
-                      style: TextStyle(color: subColor, fontSize: 13),
-                    ),
-                    trailing: Icon(Icons.chevron_right, color: iconColor),
-                    onTap: () => widget.onIconPackPressed(context),
-                  ),
-                  Divider(height: 1, thickness: 1, color: dividerColor),
-                  ListTile(
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 4.0),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 6.0),
                     leading: Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
@@ -208,48 +202,6 @@ class _BoxLauncherSettingsPageState extends State<BoxLauncherSettingsPage> {
                     trailing: Icon(Icons.chevron_right, color: iconColor),
                     onTap: () {
                       _showLanguageSelector(context);
-                    },
-                  ),
-                  Divider(height: 1, thickness: 1, color: dividerColor),
-                  ListTile(
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 4.0),
-                    leading: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.green.withOpacity(0.1),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(Icons.format_size_outlined, color: Colors.green, size: 22),
-                    ),
-                    title: Text(
-                      isIndonesian ? 'Ukuran Ikon & Teks' : 'Icon & Text Size',
-                      style: TextStyle(color: textColor, fontWeight: FontWeight.w600, fontSize: 16),
-                    ),
-                    subtitle: ValueListenableBuilder<String>(
-                      valueListenable: AppListItem.appSizeNotifier,
-                      builder: (context, currentSize, child) {
-                        String sizeLabel = isIndonesian ? 'Sedang' : 'Medium';
-                        if (currentSize == 'small') {
-                          sizeLabel = isIndonesian ? 'Kecil' : 'Small';
-                        } else if (currentSize == 'large') {
-                          sizeLabel = isIndonesian ? 'Besar' : 'Large';
-                        }
-                        return Text(
-                          sizeLabel,
-                          style: TextStyle(color: subColor, fontSize: 13),
-                        );
-                      },
-                    ),
-                    trailing: Icon(Icons.chevron_right, color: iconColor),
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => BoxLauncherSizeSettingsPage(
-                            selectedLanguage: _currentLanguage,
-                          ),
-                        ),
-                      );
                     },
                   ),
                 ],

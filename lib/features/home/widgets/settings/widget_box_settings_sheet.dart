@@ -1,6 +1,5 @@
 import 'package:box_launcher/features/favorites/pages/edit_favorites_page.dart';
 import 'package:box_launcher/features/home/widgets/settings/box_launcher_settings_page.dart';
-import 'package:box_launcher/features/home/widgets/settings/theme_bundle_selector_sheet.dart';
 import 'package:flutter/material.dart';
 
 class WidgetBoxSettingsSheet extends StatefulWidget {
@@ -188,18 +187,7 @@ class _WidgetBoxSettingsSheetState extends State<WidgetBoxSettingsSheet> {
                   );
                 },
               ),
-              ListTile(
-                contentPadding: const EdgeInsets.symmetric(horizontal: 24.0),
-                leading: Icon(Icons.color_lens_outlined, color: iconColor),
-                title: Text(widget.selectedLanguage == 'id' ? 'Ganti tema bundle' : 'Change theme bundle',
-                    style: TextStyle(
-                        color: textColor, fontWeight: FontWeight.w500)),
-                trailing: Icon(Icons.chevron_right, color: iconColor),
-                onTap: () {
-                  Navigator.pop(context);
-                  ThemeBundleSelectorSheet.show(context);
-                },
-              ),
+
               ListTile(
                 contentPadding: const EdgeInsets.symmetric(horizontal: 24.0),
                 leading: Icon(Icons.settings_outlined, color: iconColor),
