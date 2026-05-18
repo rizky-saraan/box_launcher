@@ -5,6 +5,7 @@ import 'package:box_launcher/features/favorites/bloc/favorites_bloc.dart';
 import 'package:box_launcher/features/launcher/bloc/launcher_bloc.dart';
 import 'package:box_launcher/features/launcher/pages/launcher_page.dart';
 import 'package:box_launcher/features/search/bloc/search_bloc.dart';
+import 'package:box_launcher/domain/usecases/theme_usecases.dart';
 import 'package:box_launcher/features/icon_pack/bloc/icon_pack_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -29,6 +30,15 @@ void main() async {
   await initializeDateFormatting('id_ID', null);
   await initializeDateFormatting('en_US', null);
   configureDependencies();
+
+  // Initialize the native channel with the selected icon pack BEFORE launcher loads UI and icons!
+  try {
+    final activeIconPack = await getIt<GetIconPackUseCase>().call();
+    await getIt<SetIconPackUseCase>().call(activeIconPack);
+  } catch (e) {
+    // ignore
+  }
+
   runApp(const BoxLauncherApp());
 }
 

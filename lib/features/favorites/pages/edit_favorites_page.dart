@@ -5,6 +5,8 @@ import 'package:box_launcher/domain/usecases/app_usecases.dart';
 import 'package:box_launcher/features/apps/bloc/apps_bloc.dart';
 import 'package:box_launcher/features/favorites/bloc/favorites_bloc.dart';
 import 'package:box_launcher/data/datasources/local_datasource_hive.dart';
+import 'package:box_launcher/core/theme/themed_icon_widget.dart';
+import 'package:box_launcher/features/launcher/pages/launcher_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -386,12 +388,17 @@ class EditAppListItem extends StatefulWidget {
     this.trailing,
   });
 
+  static void clearIconCache() {
+    _EditAppListItemState._iconCache.clear();
+  }
+
   @override
   State<EditAppListItem> createState() => _EditAppListItemState();
 }
 
 class _EditAppListItemState extends State<EditAppListItem> {
   static final Map<String, Uint8List> _iconCache = {};
+  static final Set<String> _loadingPackages = {};
 
   @override
   void initState() {
@@ -404,15 +411,25 @@ class _EditAppListItemState extends State<EditAppListItem> {
   }
 
   Future<Uint8List?> _loadIcon() async {
+    final pkg = widget.app.packageName;
+    if (_iconCache.containsKey(pkg)) {
+      return _iconCache[pkg];
+    }
+    if (_loadingPackages.contains(pkg)) {
+      return null;
+    }
+    _loadingPackages.add(pkg);
     try {
       final appWithIcon = await getIt<GetAppIconUseCase>().call(widget.app);
       if (appWithIcon.icon != null) {
-        _iconCache[widget.app.packageName] = appWithIcon.icon!;
+        _iconCache[pkg] = appWithIcon.icon!;
         if (mounted) setState(() {});
         return appWithIcon.icon;
       }
     } catch (e) {
       // ignore
+    } finally {
+      _loadingPackages.remove(pkg);
     }
     return null;
   }
@@ -420,6 +437,9 @@ class _EditAppListItemState extends State<EditAppListItem> {
   @override
   Widget build(BuildContext context) {
     final cachedIcon = _iconCache[widget.app.packageName];
+    if (cachedIcon == null) {
+      _loadIcon();
+    }
     final accentColor = const Color(0xFF8294E3);
 
     return InkWell(
@@ -445,22 +465,17 @@ class _EditAppListItemState extends State<EditAppListItem> {
             ),
             const SizedBox(width: 16),
             // App Icon
-            SizedBox(
-              width: 32,
-              height: 32,
-              child: cachedIcon != null
-                  ? Image.memory(
-                      cachedIcon,
-                      width: 32,
-                      height: 32,
-                      gaplessPlayback: true,
-                    )
-                  : Container(
-                      decoration: const BoxDecoration(
-                        color: Colors.white12,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
+            ValueListenableBuilder<String>(
+              valueListenable: LauncherPage.activeThemeBundleNotifier,
+              builder: (context, activeBundleId, _) {
+                return ThemedIconWidget(
+                  appLabel: widget.app.label,
+                  packageName: widget.app.packageName,
+                  originalIconBytes: cachedIcon,
+                  activeBundleId: activeBundleId,
+                  size: 32.0,
+                );
+              },
             ),
             const SizedBox(width: 16),
             // App Label

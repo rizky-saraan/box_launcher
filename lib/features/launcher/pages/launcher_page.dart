@@ -1,4 +1,5 @@
 import 'package:box_launcher/core/di/injection.dart';
+import 'package:box_launcher/core/theme/theme_bundle.dart';
 import 'package:box_launcher/data/datasources/native_channel.dart';
 import 'package:box_launcher/data/datasources/local_datasource_hive.dart';
 import 'package:box_launcher/features/apps/bloc/apps_bloc.dart';
@@ -14,6 +15,8 @@ import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 
 class LauncherPage extends StatefulWidget {
   const LauncherPage({super.key});
+
+  static final ValueNotifier<String> activeThemeBundleNotifier = ValueNotifier<String>('system');
 
   @override
   State<LauncherPage> createState() => _LauncherPageState();
@@ -37,6 +40,10 @@ class _LauncherPageState extends State<LauncherPage> with WidgetsBindingObserver
     _itemPositionsListener.itemPositions.addListener(_onScroll);
     getIt<LocalDataSourceHive>().getAppSize().then((size) {
       AppListItem.appSizeNotifier.value = size;
+    });
+    // Load initial active theme bundle from Hive
+    getIt<LocalDataSourceHive>().getActiveThemeBundle().then((bundleId) {
+      LauncherPage.activeThemeBundleNotifier.value = bundleId;
     });
   }
 
@@ -126,6 +133,55 @@ class _LauncherPageState extends State<LauncherPage> with WidgetsBindingObserver
         },
         child: Stack(
           children: [
+            // Dynamic premium custom theme bundle wallpaper with 3D parallax scroll effect!
+            ValueListenableBuilder<String>(
+              valueListenable: LauncherPage.activeThemeBundleNotifier,
+              builder: (context, activeBundleId, _) {
+                final activeBundle = ThemeBundle.presets.firstWhere(
+                  (b) => b.id == activeBundleId,
+                  orElse: () => ThemeBundle.presets.first,
+                );
+                if (activeBundle.wallpaperUrl.isEmpty) {
+                  return const SizedBox.shrink();
+                }
+                return ValueListenableBuilder<double>(
+                  valueListenable: _scrollProgressNotifier,
+                  builder: (context, progress, _) {
+                    // Parallax factor: shift wallpaper slightly vertically based on scroll progress
+                    final double verticalShift = -progress * 30.0;
+                    return Positioned(
+                      top: verticalShift - 20.0,
+                      bottom: -verticalShift - 20.0,
+                      left: -20.0,
+                      right: -20.0,
+                      child: Image.network(
+                        activeBundle.wallpaperUrl,
+                        fit: BoxFit.cover,
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return Container(
+                            color: Colors.black54,
+                            child: const Center(
+                              child: CircularProgressIndicator(
+                                color: Colors.white30,
+                              ),
+                            ),
+                          );
+                        },
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            color: Colors.black87,
+                            child: const Center(
+                              child: Icon(Icons.broken_image_outlined, color: Colors.white30),
+                            ),
+                          );
+                        },
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
             // Dynamic Background overlay for premium readability when scrolled
             ValueListenableBuilder<double>(
               valueListenable: _scrollProgressNotifier,

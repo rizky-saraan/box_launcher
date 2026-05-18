@@ -7,6 +7,7 @@ import 'package:box_launcher/data/services/weather_service.dart';
 import 'package:box_launcher/features/apps/bloc/apps_bloc.dart';
 import 'package:box_launcher/features/apps/widgets/app_list_item.dart';
 import 'package:box_launcher/features/favorites/bloc/favorites_bloc.dart';
+import 'package:box_launcher/features/favorites/pages/edit_favorites_page.dart';
 import 'package:box_launcher/features/icon_pack/bloc/icon_pack_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -172,6 +173,8 @@ class _HomeHeaderState extends State<HomeHeader> {
                           ? const Icon(Icons.check, color: Colors.green)
                           : null,
                       onTap: () {
+                        AppListItem.clearIconCache();
+                        EditAppListItem.clearIconCache();
                         context.read<IconPackBloc>().add(
                             SetIconPackSelectionEvent(
                                 pack['packageName']));

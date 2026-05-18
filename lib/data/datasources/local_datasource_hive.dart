@@ -136,4 +136,16 @@ class LocalDataSourceHive {
     await box.put(_weatherCityKey, city);
     await box.put(_weatherTimeKey, timestamp);
   }
+
+  static const String _themeBundleKey = 'active_theme_bundle';
+
+  Future<String> getActiveThemeBundle() async {
+    final box = await Hive.openBox(_boxName);
+    return box.get(_themeBundleKey) as String? ?? 'system';
+  }
+
+  Future<void> saveActiveThemeBundle(String bundleId) async {
+    final box = await Hive.openBox(_boxName);
+    await box.put(_themeBundleKey, bundleId);
+  }
 }
