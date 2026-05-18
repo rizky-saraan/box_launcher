@@ -127,14 +127,21 @@ class _AppListItemState extends State<AppListItem> {
         child: ValueListenableBuilder<String>(
           valueListenable: AppListItem.appSizeNotifier,
           builder: (context, appSize, child) {
-            double iconSize = 32.0;
-            double fontSize = 15.0;
+            double iconSize = 34.0;
+            double fontSize = 16.0;
             if (appSize == 'small') {
-              iconSize = 28.0;
+              iconSize = 29.0;
               fontSize = 13.0;
             } else if (appSize == 'large') {
-              iconSize = 40.0;
+              iconSize = 39.0;
               fontSize = 18.0;
+            } else if (appSize == 'medium') {
+              iconSize = 34.0;
+              fontSize = 16.0;
+            } else {
+              final val = int.tryParse(appSize) ?? 5;
+              iconSize = 24.0 + (val - 1) * 2.5;
+              fontSize = 12.0 + (val - 1) * 1.0;
             }
 
             return Padding(

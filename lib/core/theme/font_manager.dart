@@ -92,6 +92,7 @@ class FontManager {
       final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['ttf', 'otf'],
+        compressionQuality: 0,
       );
 
       if (result == null || result.files.single.path == null) {

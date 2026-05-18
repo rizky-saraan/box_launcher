@@ -74,7 +74,7 @@ class BoxLauncherApp extends StatelessWidget {
               final TextTheme dynamicTextThemeDark = FontManager.applyDynamicFontToTextTheme(baseTextThemeDark);
 
               return MaterialApp(
-                title: 'Box Launcher',
+                title: 'Saraan Launcher',
                 theme: ThemeData.light(useMaterial3: true).copyWith(
                   scaffoldBackgroundColor: Colors.transparent,
                   textTheme: dynamicTextThemeLight,

@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'dart:io';
+import 'package:http/http.dart' as http;
+import 'package:path_provider/path_provider.dart';
+import 'package:box_launcher/data/datasources/native_channel.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:box_launcher/core/di/injection.dart';
 import 'package:box_launcher/core/theme/theme_bundle.dart';
@@ -95,6 +99,11 @@ class _ThemeBundleSelectorSheetState extends State<ThemeBundleSelectorSheet> {
     // Update active theme state to trigger instant wallpaper swap
     LauncherPage.activeThemeBundleNotifier.value = bundle.id;
 
+    // Download and apply system-wide wallpaper in background to target both screens
+    if (bundle.wallpaperUrl.isNotEmpty) {
+      _applySystemWallpaperFromUrl(bundle.wallpaperUrl);
+    }
+
     if (mounted) {
       Navigator.pop(context); // Close the sheet
       ScaffoldMessenger.of(context).showSnackBar(
@@ -110,6 +119,24 @@ class _ThemeBundleSelectorSheetState extends State<ThemeBundleSelectorSheet> {
           duration: const Duration(seconds: 2),
         ),
       );
+    }
+  }
+
+  Future<void> _applySystemWallpaperFromUrl(String url) async {
+    try {
+      final response = await http.get(Uri.parse(url));
+      if (response.statusCode == 200) {
+        final bytes = response.bodyBytes;
+        final tempDir = await getTemporaryDirectory();
+        final tempFile = File('${tempDir.path}/theme_${DateTime.now().millisecondsSinceEpoch}.jpg');
+        await tempFile.writeAsBytes(bytes);
+        await getIt<NativeChannel>().setSystemWallpaper(tempFile.path);
+        try {
+          await tempFile.delete();
+        } catch (_) {}
+      }
+    } catch (e) {
+      debugPrint("Error applying system wallpaper from theme bundle: $e");
     }
   }
 

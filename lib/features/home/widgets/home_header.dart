@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:file_picker/file_picker.dart';
 
 import 'package:box_launcher/core/di/injection.dart';
 import 'package:box_launcher/data/datasources/native_channel.dart';
@@ -284,7 +285,11 @@ class _HomeHeaderState extends State<HomeHeader> {
                     Navigator.pop(ctx);
                   } catch (_) {}
                 }
-                getIt<NativeChannel>().openWallpaperPicker();
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (mounted) {
+                    _showWallpaperSourceChooser();
+                  }
+                });
               },
               onIconPackPressed: (settingsContext) {
                 if (state is IconPackLoaded) {
@@ -301,6 +306,183 @@ class _HomeHeaderState extends State<HomeHeader> {
         );
       },
     );
+  }
+
+  void _showWallpaperSourceChooser() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgColor = isDark ? const Color(0xFF1E1E1E) : Colors.white;
+    final textColor = isDark ? Colors.white : Colors.black87;
+    final subColor = isDark ? Colors.white54 : Colors.black54;
+    final dividerColor = isDark ? Colors.white10 : Colors.black12;
+    final isIndonesian = _selectedLanguage == 'id';
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return Container(
+          decoration: BoxDecoration(
+            color: bgColor,
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(24),
+              topRight: Radius.circular(24),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.2),
+                blurRadius: 10,
+                offset: const Offset(0, -2),
+              ),
+            ],
+          ),
+          padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: isDark ? Colors.white24 : Colors.black12,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Text(
+                isIndonesian ? 'Sumber Wallpaper' : 'Wallpaper Source',
+                style: TextStyle(
+                  color: textColor,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                isIndonesian
+                    ? 'Pilih bagaimana Anda ingin mengubah wallpaper'
+                    : 'Choose how you want to change your wallpaper',
+                style: TextStyle(
+                  color: subColor,
+                  fontSize: 13,
+                ),
+              ),
+              const SizedBox(height: 20),
+              
+              // Option 1: System / Wallpaper Apps
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.app_shortcut_outlined, color: Colors.blue, size: 24),
+                ),
+                title: Text(
+                  isIndonesian ? 'Aplikasi Wallpaper / Sistem' : 'Wallpaper Apps / System',
+                  style: TextStyle(color: textColor, fontWeight: FontWeight.w600),
+                ),
+                subtitle: Text(
+                  isIndonesian
+                      ? 'Pilih dari Zedge, Google Wallpapers, Live Wallpaper, dll.'
+                      : 'Select from Zedge, Google Wallpapers, Live Wallpapers, etc.',
+                  style: TextStyle(color: subColor, fontSize: 12),
+                ),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  getIt<NativeChannel>().openWallpaperPicker();
+                },
+              ),
+              Divider(height: 1, color: dividerColor),
+              
+              // Option 2: Gallery / Local Image (sets on both)
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.green.withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.photo_library_outlined, color: Colors.green, size: 24),
+                ),
+                title: Text(
+                  isIndonesian ? 'Pilih dari Galeri Foto' : 'Choose from Gallery',
+                  style: TextStyle(color: textColor, fontWeight: FontWeight.w600),
+                ),
+                subtitle: Text(
+                  isIndonesian
+                      ? 'Pilih foto Anda & terapkan ke Home Screen + Lock Screen sekaligus'
+                      : 'Select a photo & apply to Home Screen + Lock Screen at once',
+                  style: TextStyle(color: subColor, fontSize: 12),
+                ),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _pickAndApplyGalleryWallpaper();
+                },
+              ),
+              const SizedBox(height: 12),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _pickAndApplyGalleryWallpaper() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.image,
+        compressionQuality: 0,
+      );
+
+      if (result == null || result.files.single.path == null) {
+        return;
+      }
+
+      final filePath = result.files.single.path!;
+      final isIndonesian = _selectedLanguage == 'id';
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              isIndonesian
+                  ? 'Menerapkan wallpaper pada home & lock screen...'
+                  : 'Applying wallpaper to home & lock screen...',
+              style: const TextStyle(color: Colors.white),
+            ),
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 1),
+          ),
+        );
+      }
+
+      final success = await getIt<NativeChannel>().setSystemWallpaper(filePath);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              success
+                  ? (isIndonesian
+                      ? 'Wallpaper berhasil diterapkan ke semua layar!'
+                      : 'Wallpaper applied to all screens successfully!')
+                  : (isIndonesian ? 'Gagal menerapkan wallpaper!' : 'Failed to apply wallpaper!'),
+              style: const TextStyle(color: Colors.white),
+            ),
+            backgroundColor: success ? Colors.green.shade800 : Colors.red.shade800,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint("Error picking/setting wallpaper: $e");
+    }
   }
 
   @override

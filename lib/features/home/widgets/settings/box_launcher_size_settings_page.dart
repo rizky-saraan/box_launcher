@@ -16,7 +16,7 @@ class BoxLauncherSizeSettingsPage extends StatefulWidget {
 }
 
 class _BoxLauncherSizeSettingsPageState extends State<BoxLauncherSizeSettingsPage> {
-  double _sliderValue = 1.0; // 0 = small, 1 = medium, 2 = large
+  double _sliderValue = 5.0; // Level 1 to 9
   late String _languageCode;
 
   @override
@@ -30,25 +30,45 @@ class _BoxLauncherSizeSettingsPageState extends State<BoxLauncherSizeSettingsPag
     final size = await getIt<LocalDataSourceHive>().getAppSize();
     setState(() {
       if (size == 'small') {
-        _sliderValue = 0.0;
+        _sliderValue = 3.0;
       } else if (size == 'large') {
-        _sliderValue = 2.0;
+        _sliderValue = 7.0;
+      } else if (size == 'medium') {
+        _sliderValue = 5.0;
       } else {
-        _sliderValue = 1.0;
+        _sliderValue = double.tryParse(size) ?? 5.0;
       }
     });
   }
 
   String _getSizeString(double value) {
-    if (value == 0.0) return 'small';
-    if (value == 2.0) return 'large';
-    return 'medium';
+    return value.round().toString();
   }
 
   String _getSizeLabel(double value, bool isIndonesian) {
-    if (value == 0.0) return isIndonesian ? 'Kecil' : 'Small';
-    if (value == 2.0) return isIndonesian ? 'Besar' : 'Large';
-    return isIndonesian ? 'Sedang' : 'Medium';
+    final val = value.round();
+    switch (val) {
+      case 1:
+        return isIndonesian ? 'Sangat Kecil (Level 1)' : 'Extremely Small (Level 1)';
+      case 2:
+        return isIndonesian ? 'Cukup Kecil (Level 2)' : 'Very Small (Level 2)';
+      case 3:
+        return isIndonesian ? 'Kecil (Level 3)' : 'Small (Level 3)';
+      case 4:
+        return isIndonesian ? 'Agak Kecil (Level 4)' : 'Slightly Small (Level 4)';
+      case 5:
+        return isIndonesian ? 'Sedang (Level 5)' : 'Medium (Level 5)';
+      case 6:
+        return isIndonesian ? 'Agak Besar (Level 6)' : 'Slightly Large (Level 6)';
+      case 7:
+        return isIndonesian ? 'Besar (Level 7)' : 'Large (Level 7)';
+      case 8:
+        return isIndonesian ? 'Cukup Besar (Level 8)' : 'Very Large (Level 8)';
+      case 9:
+        return isIndonesian ? 'Sangat Besar (Level 9)' : 'Extremely Large (Level 9)';
+      default:
+        return isIndonesian ? 'Sedang (Level 5)' : 'Medium (Level 5)';
+    }
   }
 
   Future<void> _onSizeChanged(double value) async {
@@ -73,15 +93,9 @@ class _BoxLauncherSizeSettingsPageState extends State<BoxLauncherSizeSettingsPag
     final isIndonesian = _languageCode == 'id';
 
     // Calculate dimensions for the interactive live preview card
-    double previewIconSize = 32.0;
-    double previewFontSize = 15.0;
-    if (_sliderValue == 0.0) {
-      previewIconSize = 28.0;
-      previewFontSize = 13.0;
-    } else if (_sliderValue == 2.0) {
-      previewIconSize = 40.0;
-      previewFontSize = 18.0;
-    }
+    final int level = _sliderValue.round();
+    double previewIconSize = 24.0 + (level - 1) * 2.5;
+    double previewFontSize = 12.0 + (level - 1) * 1.0;
 
     return Scaffold(
       backgroundColor: bgColor,
@@ -239,36 +253,39 @@ class _BoxLauncherSizeSettingsPageState extends State<BoxLauncherSizeSettingsPag
                     ),
                     child: Slider(
                       value: _sliderValue,
-                      min: 0.0,
-                      max: 2.0,
-                      divisions: 2,
+                      min: 1.0,
+                      max: 9.0,
+                      divisions: 8,
                       onChanged: _onSizeChanged,
                     ),
                   ),
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          isIndonesian ? 'Kecil' : 'Small',
-                          style: TextStyle(
-                            color: _sliderValue == 0.0 ? const Color(0xFFD49B9B) : subColor,
-                            fontWeight: _sliderValue == 0.0 ? FontWeight.bold : FontWeight.normal,
-                          ),
-                        ),
-                        Text(
-                          isIndonesian ? 'Sedang' : 'Medium',
+                          isIndonesian ? 'Sangat Kecil' : 'Extremely Small',
                           style: TextStyle(
                             color: _sliderValue == 1.0 ? const Color(0xFFD49B9B) : subColor,
+                            fontSize: 11,
                             fontWeight: _sliderValue == 1.0 ? FontWeight.bold : FontWeight.normal,
                           ),
                         ),
                         Text(
-                          isIndonesian ? 'Besar' : 'Large',
+                          isIndonesian ? 'Sedang (Lvl 5)' : 'Medium (Lvl 5)',
                           style: TextStyle(
-                            color: _sliderValue == 2.0 ? const Color(0xFFD49B9B) : subColor,
-                            fontWeight: _sliderValue == 2.0 ? FontWeight.bold : FontWeight.normal,
+                            color: _sliderValue == 5.0 ? const Color(0xFFD49B9B) : subColor,
+                            fontSize: 11,
+                            fontWeight: _sliderValue == 5.0 ? FontWeight.bold : FontWeight.normal,
+                          ),
+                        ),
+                        Text(
+                          isIndonesian ? 'Sangat Besar' : 'Extremely Large',
+                          style: TextStyle(
+                            color: _sliderValue == 9.0 ? const Color(0xFFD49B9B) : subColor,
+                            fontSize: 11,
+                            fontWeight: _sliderValue == 9.0 ? FontWeight.bold : FontWeight.normal,
                           ),
                         ),
                       ],

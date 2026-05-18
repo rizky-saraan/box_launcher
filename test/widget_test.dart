@@ -12,10 +12,10 @@ void main() {
   testWidgets('Launcher smoke test', (WidgetTester tester) async {
     await tester.pumpWidget(const MaterialApp(
       home: Scaffold(
-        body: Text('Box Launcher'),
+        body: Text('Saraan Launcher'),
       ),
     ));
 
-    expect(find.text('Box Launcher'), findsOneWidget);
+    expect(find.text('Saraan Launcher'), findsOneWidget);
   });
 }

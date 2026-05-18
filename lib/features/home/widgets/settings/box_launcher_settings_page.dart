@@ -114,7 +114,7 @@ class _BoxLauncherSettingsPageState extends State<BoxLauncherSettingsPage> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          isIndonesian ? 'Pengaturan Box Launcher' : 'Box Launcher Settings',
+          isIndonesian ? 'Pengaturan Saraan Launcher' : 'Saraan Launcher Settings',
           style: TextStyle(
             color: textColor,
             fontSize: 20,

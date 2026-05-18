@@ -40,6 +40,15 @@ class NativeChannel {
     await _channel.invokeMethod('openWallpaperPicker');
   }
 
+  Future<bool> setSystemWallpaper(String filePath) async {
+    try {
+      final bool? result = await _channel.invokeMethod('setSystemWallpaper', {'filePath': filePath});
+      return result ?? false;
+    } catch (e) {
+      return false;
+    }
+  }
+
   Future<void> updateWallpaperOffset(double offset) async {
     try {
       await _channel.invokeMethod('updateWallpaperOffset', {'offset': offset});

@@ -191,7 +191,7 @@ class _WidgetBoxSettingsSheetState extends State<WidgetBoxSettingsSheet> {
               ListTile(
                 contentPadding: const EdgeInsets.symmetric(horizontal: 24.0),
                 leading: Icon(Icons.settings_outlined, color: iconColor),
-                title: Text('Pengaturan Box Launcher',
+                title: Text('Pengaturan Saraan Launcher',
                     style: TextStyle(
                         color: textColor, fontWeight: FontWeight.w500)),
                 trailing: Icon(Icons.chevron_right, color: iconColor),
@@ -214,7 +214,7 @@ class _WidgetBoxSettingsSheetState extends State<WidgetBoxSettingsSheet> {
               ListTile(
                 contentPadding: const EdgeInsets.symmetric(horizontal: 24.0),
                 leading: Icon(Icons.auto_awesome_outlined, color: iconColor),
-                title: Text('Box Launcher Pro',
+                title: Text('Saraan Launcher Pro',
                     style: TextStyle(
                         color: textColor, fontWeight: FontWeight.w500)),
                 subtitle: Text('Cobalah untuk 7 hari',

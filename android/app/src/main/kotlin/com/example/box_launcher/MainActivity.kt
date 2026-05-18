@@ -88,6 +88,19 @@ class MainActivity: FlutterActivity() {
                     startActivity(Intent.createChooser(intent, "Select Wallpaper"))
                     result.success(true)
                 }
+                "setSystemWallpaper" -> {
+                    val filePath = call.argument<String>("filePath")
+                    if (filePath != null) {
+                        scope.launch {
+                            val success = setSystemWallpaper(filePath)
+                            withContext(Dispatchers.Main) {
+                                result.success(success)
+                            }
+                        }
+                    } else {
+                        result.error("INVALID_FILE", "File path is null", null)
+                    }
+                }
                 "updateWallpaperOffset" -> {
                     val offset = call.argument<Double>("offset") ?: 0.0
                     updateWallpaperOffset(offset.toFloat())
@@ -258,6 +271,31 @@ class MainActivity: FlutterActivity() {
             }
         } catch (e: Exception) {
             e.printStackTrace()
+        }
+    }
+
+    private fun setSystemWallpaper(filePath: String): Boolean {
+        return try {
+            val file = java.io.File(filePath)
+            if (!file.exists()) return false
+
+            val wallpaperManager = WallpaperManager.getInstance(this)
+            val inputStream = java.io.FileInputStream(file)
+
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
+                wallpaperManager.setStream(
+                    inputStream,
+                    null,
+                    true,
+                    WallpaperManager.FLAG_SYSTEM or WallpaperManager.FLAG_LOCK
+                )
+            } else {
+                wallpaperManager.setStream(inputStream)
+            }
+            true
+        } catch (e: Exception) {
+            e.printStackTrace()
+            false
         }
     }
 

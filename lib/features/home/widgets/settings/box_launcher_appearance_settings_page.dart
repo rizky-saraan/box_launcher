@@ -135,11 +135,44 @@ class BoxLauncherAppearanceSettingsPage extends StatelessWidget {
                     subtitle: ValueListenableBuilder<String>(
                       valueListenable: AppListItem.appSizeNotifier,
                       builder: (context, currentSize, child) {
-                        String sizeLabel = isIndonesian ? 'Sedang' : 'Medium';
+                        String sizeLabel = isIndonesian ? 'Sedang (Level 5)' : 'Medium (Level 5)';
                         if (currentSize == 'small') {
-                          sizeLabel = isIndonesian ? 'Kecil' : 'Small';
+                          sizeLabel = isIndonesian ? 'Kecil (Level 3)' : 'Small (Level 3)';
                         } else if (currentSize == 'large') {
-                          sizeLabel = isIndonesian ? 'Besar' : 'Large';
+                          sizeLabel = isIndonesian ? 'Besar (Level 7)' : 'Large (Level 7)';
+                        } else if (currentSize == 'medium') {
+                          sizeLabel = isIndonesian ? 'Sedang (Level 5)' : 'Medium (Level 5)';
+                        } else {
+                          final val = int.tryParse(currentSize) ?? 5;
+                          switch (val) {
+                            case 1:
+                              sizeLabel = isIndonesian ? 'Sangat Kecil (Level 1)' : 'Extremely Small (Level 1)';
+                              break;
+                            case 2:
+                              sizeLabel = isIndonesian ? 'Cukup Kecil (Level 2)' : 'Very Small (Level 2)';
+                              break;
+                            case 3:
+                              sizeLabel = isIndonesian ? 'Kecil (Level 3)' : 'Small (Level 3)';
+                              break;
+                            case 4:
+                              sizeLabel = isIndonesian ? 'Agak Kecil (Level 4)' : 'Slightly Small (Level 4)';
+                              break;
+                            case 5:
+                              sizeLabel = isIndonesian ? 'Sedang (Level 5)' : 'Medium (Level 5)';
+                              break;
+                            case 6:
+                              sizeLabel = isIndonesian ? 'Agak Besar (Level 6)' : 'Slightly Large (Level 6)';
+                              break;
+                            case 7:
+                              sizeLabel = isIndonesian ? 'Besar (Level 7)' : 'Large (Level 7)';
+                              break;
+                            case 8:
+                              sizeLabel = isIndonesian ? 'Cukup Besar (Level 8)' : 'Very Large (Level 8)';
+                              break;
+                            case 9:
+                              sizeLabel = isIndonesian ? 'Sangat Besar (Level 9)' : 'Extremely Large (Level 9)';
+                              break;
+                          }
                         }
                         return Text(
                           sizeLabel,
