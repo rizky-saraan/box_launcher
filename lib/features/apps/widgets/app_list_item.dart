@@ -11,6 +11,8 @@ class AppListItem extends StatefulWidget {
   final AppInfo app;
   final bool isFavoriteList;
 
+  static final ValueNotifier<String> appSizeNotifier = ValueNotifier<String>('medium');
+
   const AppListItem({
     super.key,
     required this.app,
@@ -97,45 +99,60 @@ class _AppListItemState extends State<AppListItem> {
         onLongPress: () => _showOptions(context),
         splashColor: Colors.white10,
         highlightColor: Colors.white10,
-        child: Padding(
-          padding: EdgeInsets.symmetric(
-            horizontal: widget.isFavoriteList ? 0.0 : 32.0,
-            vertical: 8.0,
-          ),
-          child: Row(
-            children: [
-              SizedBox(
-                width: 32,
-                height: 32,
-                child: cachedIcon != null
-                    ? Image.memory(
-                        cachedIcon,
-                        width: 32,
-                        height: 32,
-                        gaplessPlayback: true,
-                      )
-                    : Container(
-                        decoration: const BoxDecoration(
-                          color: Colors.white12,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
+        child: ValueListenableBuilder<String>(
+          valueListenable: AppListItem.appSizeNotifier,
+          builder: (context, appSize, child) {
+            double iconSize = 32.0;
+            double fontSize = 15.0;
+            if (appSize == 'small') {
+              iconSize = 28.0;
+              fontSize = 13.0;
+            } else if (appSize == 'large') {
+              iconSize = 40.0;
+              fontSize = 18.0;
+            }
+
+            return Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: widget.isFavoriteList ? 0.0 : 32.0,
+                vertical: 8.0,
               ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Text(
-                  widget.app.label,
-                  style: const TextStyle(
-                    fontSize: 15,
-                    color: Colors.white,
-                    fontWeight: FontWeight.w400,
+              child: Row(
+                children: [
+                  SizedBox(
+                    width: iconSize,
+                    height: iconSize,
+                    child: cachedIcon != null
+                        ? Image.memory(
+                            cachedIcon,
+                            width: iconSize,
+                            height: iconSize,
+                            gaplessPlayback: true,
+                          )
+                        : Container(
+                            decoration: const BoxDecoration(
+                              color: Colors.white12,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Text(
+                      widget.app.label,
+                      style: TextStyle(
+                        fontSize: fontSize,
+                        color: Colors.white,
+                        fontWeight: FontWeight.w400,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
+            );
+          },
         ),
       ),
     );

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:box_launcher/features/home/widgets/settings/box_launcher_size_settings_page.dart';
+import 'package:box_launcher/features/apps/widgets/app_list_item.dart';
 
 class BoxLauncherSettingsPage extends StatefulWidget {
   final VoidCallback onWallpaperPickerPressed;
@@ -206,6 +208,48 @@ class _BoxLauncherSettingsPageState extends State<BoxLauncherSettingsPage> {
                     trailing: Icon(Icons.chevron_right, color: iconColor),
                     onTap: () {
                       _showLanguageSelector(context);
+                    },
+                  ),
+                  Divider(height: 1, thickness: 1, color: dividerColor),
+                  ListTile(
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 4.0),
+                    leading: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.green.withOpacity(0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.format_size_outlined, color: Colors.green, size: 22),
+                    ),
+                    title: Text(
+                      isIndonesian ? 'Ukuran Ikon & Teks' : 'Icon & Text Size',
+                      style: TextStyle(color: textColor, fontWeight: FontWeight.w600, fontSize: 16),
+                    ),
+                    subtitle: ValueListenableBuilder<String>(
+                      valueListenable: AppListItem.appSizeNotifier,
+                      builder: (context, currentSize, child) {
+                        String sizeLabel = isIndonesian ? 'Sedang' : 'Medium';
+                        if (currentSize == 'small') {
+                          sizeLabel = isIndonesian ? 'Kecil' : 'Small';
+                        } else if (currentSize == 'large') {
+                          sizeLabel = isIndonesian ? 'Besar' : 'Large';
+                        }
+                        return Text(
+                          sizeLabel,
+                          style: TextStyle(color: subColor, fontSize: 13),
+                        );
+                      },
+                    ),
+                    trailing: Icon(Icons.chevron_right, color: iconColor),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => BoxLauncherSizeSettingsPage(
+                            selectedLanguage: _currentLanguage,
+                          ),
+                        ),
+                      );
                     },
                   ),
                 ],

@@ -39,6 +39,17 @@ class LocalDataSourceHive {
   static const String _showWeatherKey = 'show_weather';
   static const String _showMediaWidgetKey = 'show_media_widget';
   static const String _showBatteryKey = 'show_battery';
+  static const String _appSizeKey = 'app_size';
+
+  Future<String> getAppSize() async {
+    final box = await Hive.openBox(_boxName);
+    return box.get(_appSizeKey) as String? ?? 'medium';
+  }
+
+  Future<void> saveAppSize(String size) async {
+    final box = await Hive.openBox(_boxName);
+    await box.put(_appSizeKey, size);
+  }
 
   Future<String> getClockStyle() async {
     final box = await Hive.openBox(_boxName);

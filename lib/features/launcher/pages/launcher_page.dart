@@ -1,5 +1,6 @@
 import 'package:box_launcher/core/di/injection.dart';
 import 'package:box_launcher/data/datasources/native_channel.dart';
+import 'package:box_launcher/data/datasources/local_datasource_hive.dart';
 import 'package:box_launcher/features/apps/bloc/apps_bloc.dart';
 import 'package:box_launcher/features/apps/widgets/alphabet_sidebar.dart';
 import 'package:box_launcher/features/apps/widgets/app_list_item.dart';
@@ -18,7 +19,7 @@ class LauncherPage extends StatefulWidget {
   State<LauncherPage> createState() => _LauncherPageState();
 }
 
-class _LauncherPageState extends State<LauncherPage> {
+class _LauncherPageState extends State<LauncherPage> with WidgetsBindingObserver {
   final ItemScrollController _itemScrollController = ItemScrollController();
   final ItemPositionsListener _itemPositionsListener =
       ItemPositionsListener.create();
@@ -29,14 +30,31 @@ class _LauncherPageState extends State<LauncherPage> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _itemPositionsListener.itemPositions.addListener(_onScroll);
+    getIt<LocalDataSourceHive>().getAppSize().then((size) {
+      AppListItem.appSizeNotifier.value = size;
+    });
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _itemPositionsListener.itemPositions.removeListener(_onScroll);
     _scrollProgressNotifier.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      if (_isSearching) {
+        _stopSearch();
+      }
+      if (!_isAtTop) {
+        _scrollToTop();
+      }
+    }
   }
 
   void _onScroll() {
@@ -99,7 +117,7 @@ class _LauncherPageState extends State<LauncherPage> {
           }
 
           if (!_isAtTop) {
-            _scrollToIndex(0);
+            _scrollToTop();
           }
         },
         child: Stack(
@@ -213,6 +231,16 @@ class _LauncherPageState extends State<LauncherPage> {
         index: index,
         duration: const Duration(milliseconds: 50),
         curve: Curves.easeInOutCubic,
+      );
+    }
+  }
+
+  void _scrollToTop() {
+    if (_itemScrollController.isAttached) {
+      _itemScrollController.scrollTo(
+        index: 0,
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeOutCubic,
       );
     }
   }
