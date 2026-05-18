@@ -175,6 +175,8 @@ class MainActivity: FlutterActivity() {
                     eventType = parser.next()
                 }
             }
+        } catch (e: PackageManager.NameNotFoundException) {
+            android.util.Log.w("MainActivity", "Icon pack '$packageName' is not installed on this device.")
         } catch (e: Exception) {
             e.printStackTrace()
         }
