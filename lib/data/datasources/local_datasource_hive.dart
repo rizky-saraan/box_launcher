@@ -172,4 +172,127 @@ class LocalDataSourceHive {
     final box = await Hive.openBox(_boxName);
     await box.put(_customFontsMapKey, fontsMap);
   }
+
+  static const String _showDynamicBlurKey = 'show_dynamic_blur';
+  static const String _enableHapticsKey = 'enable_haptics';
+  static const String _enableGesturesKey = 'enable_gestures';
+  static const String _enableSmartSuggestionsKey = 'enable_smart_suggestions';
+  static const String _enableWeatherAnimationsKey = 'enable_weather_animations';
+  static const String _appLockPinKey = 'app_lock_pin';
+  static const String _hiddenAppsKey = 'hidden_apps_list';
+  static const String _lockedAppsKey = 'locked_apps_list';
+  static const String _customAppNamesKey = 'custom_app_names_map';
+  static const String _customAppIconsKey = 'custom_app_icons_map';
+
+  Future<bool> getShowDynamicBlur() async {
+    final box = await Hive.openBox(_boxName);
+    return box.get(_showDynamicBlurKey) as bool? ?? true;
+  }
+
+  Future<void> saveShowDynamicBlur(bool show) async {
+    final box = await Hive.openBox(_boxName);
+    await box.put(_showDynamicBlurKey, show);
+  }
+
+  Future<bool> getEnableHaptics() async {
+    final box = await Hive.openBox(_boxName);
+    return box.get(_enableHapticsKey) as bool? ?? true;
+  }
+
+  Future<void> saveEnableHaptics(bool enable) async {
+    final box = await Hive.openBox(_boxName);
+    await box.put(_enableHapticsKey, enable);
+  }
+
+  Future<bool> getEnableGestures() async {
+    final box = await Hive.openBox(_boxName);
+    return box.get(_enableGesturesKey) as bool? ?? true;
+  }
+
+  Future<void> saveEnableGestures(bool enable) async {
+    final box = await Hive.openBox(_boxName);
+    await box.put(_enableGesturesKey, enable);
+  }
+
+  Future<bool> getEnableSmartSuggestions() async {
+    final box = await Hive.openBox(_boxName);
+    return box.get(_enableSmartSuggestionsKey) as bool? ?? true;
+  }
+
+  Future<void> saveEnableSmartSuggestions(bool enable) async {
+    final box = await Hive.openBox(_boxName);
+    await box.put(_enableSmartSuggestionsKey, enable);
+  }
+
+  Future<bool> getEnableWeatherAnimations() async {
+    final box = await Hive.openBox(_boxName);
+    return box.get(_enableWeatherAnimationsKey) as bool? ?? true;
+  }
+
+  Future<void> saveEnableWeatherAnimations(bool enable) async {
+    final box = await Hive.openBox(_boxName);
+    await box.put(_enableWeatherAnimationsKey, enable);
+  }
+
+  Future<String?> getAppLockPin() async {
+    final box = await Hive.openBox(_boxName);
+    return box.get(_appLockPinKey) as String?;
+  }
+
+  Future<void> saveAppLockPin(String? pin) async {
+    final box = await Hive.openBox(_boxName);
+    if (pin == null || pin.isEmpty) {
+      await box.delete(_appLockPinKey);
+    } else {
+      await box.put(_appLockPinKey, pin);
+    }
+  }
+
+  Future<List<String>> getHiddenApps() async {
+    final box = await Hive.openBox(_boxName);
+    final List<dynamic>? list = box.get(_hiddenAppsKey);
+    if (list == null) return [];
+    return list.cast<String>();
+  }
+
+  Future<void> saveHiddenApps(List<String> packages) async {
+    final box = await Hive.openBox(_boxName);
+    await box.put(_hiddenAppsKey, packages);
+  }
+
+  Future<List<String>> getLockedApps() async {
+    final box = await Hive.openBox(_boxName);
+    final List<dynamic>? list = box.get(_lockedAppsKey);
+    if (list == null) return [];
+    return list.cast<String>();
+  }
+
+  Future<void> saveLockedApps(List<String> packages) async {
+    final box = await Hive.openBox(_boxName);
+    await box.put(_lockedAppsKey, packages);
+  }
+
+  Future<Map<String, String>> getCustomAppNames() async {
+    final box = await Hive.openBox(_boxName);
+    final map = box.get(_customAppNamesKey);
+    if (map == null) return {};
+    return Map<String, String>.from(map);
+  }
+
+  Future<void> saveCustomAppNames(Map<String, String> map) async {
+    final box = await Hive.openBox(_boxName);
+    await box.put(_customAppNamesKey, map);
+  }
+
+  Future<Map<String, String>> getCustomAppIcons() async {
+    final box = await Hive.openBox(_boxName);
+    final map = box.get(_customAppIconsKey);
+    if (map == null) return {};
+    return Map<String, String>.from(map);
+  }
+
+  Future<void> saveCustomAppIcons(Map<String, String> map) async {
+    final box = await Hive.openBox(_boxName);
+    await box.put(_customAppIconsKey, map);
+  }
 }

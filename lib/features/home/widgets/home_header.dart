@@ -17,6 +17,7 @@ import 'package:intl/intl.dart';
 import 'clock/clock_widget.dart';
 import 'settings/clock_style_selector_sheet.dart';
 import 'settings/widget_box_settings_sheet.dart';
+import 'weather_animation_widget.dart';
 
 class HomeHeader extends StatefulWidget {
   const HomeHeader({super.key});
@@ -534,13 +535,20 @@ class _HomeHeaderState extends State<HomeHeader> {
                             ),
                           ),
                         if (_showWeather && _weatherData != null)
-                          Text(
-                            '${_weatherData!.icon} ${(_weatherData!.temperature).toStringAsFixed(0)}°',
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w500,
-                              color: Colors.white70,
-                            ),
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              WeatherAnimationWidget(icon: _weatherData!.icon),
+                              const SizedBox(width: 6),
+                              Text(
+                                '${(_weatherData!.temperature).toStringAsFixed(0)}°',
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.white70,
+                                ),
+                              ),
+                            ],
                           ),
                       ],
                     ),

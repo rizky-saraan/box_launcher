@@ -7,6 +7,7 @@ import 'package:box_launcher/features/apps/bloc/apps_bloc.dart';
 import 'package:box_launcher/core/theme/themed_icon_widget.dart';
 import 'package:box_launcher/features/favorites/bloc/favorites_bloc.dart';
 import 'package:box_launcher/features/launcher/pages/launcher_page.dart';
+import 'package:box_launcher/features/launcher/widgets/app_lock_pin_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -68,13 +69,39 @@ class _AppListItemState extends State<AppListItem> {
     return null;
   }
 
-  void _openApp(BuildContext context) {
-    context.read<AppsBloc>().add(OpenAppEvent(widget.app.packageName));
+  void _openApp(BuildContext context) async {
+    final hive = getIt<LocalDataSourceHive>();
+    final lockedApps = await hive.getLockedApps();
+    final pin = await hive.getAppLockPin();
+
+    if (lockedApps.contains(widget.app.packageName) && pin != null && pin.isNotEmpty) {
+      if (!context.mounted) return;
+      final success = await showAppLockPinSheet(context, pin);
+      if (success) {
+        if (context.mounted) {
+          context.read<AppsBloc>().add(OpenAppEvent(widget.app.packageName));
+        }
+      }
+    } else {
+      if (context.mounted) {
+        context.read<AppsBloc>().add(OpenAppEvent(widget.app.packageName));
+      }
+    }
   }
 
   void _showOptions(BuildContext context) async {
-    final lang = await getIt<LocalDataSourceHive>().getLanguageCode();
+    final hive = getIt<LocalDataSourceHive>();
+    final lang = await hive.getLanguageCode();
+    final lockedApps = await hive.getLockedApps();
+    final hiddenApps = await hive.getHiddenApps();
+    final pin = await hive.getAppLockPin();
+    final hasPin = pin != null && pin.isNotEmpty;
+
     if (!context.mounted) return;
+
+    final isLocked = lockedApps.contains(widget.app.packageName);
+    final isHidden = hiddenApps.contains(widget.app.packageName);
+    final isIndonesian = lang == 'id';
 
     showModalBottomSheet(
       context: context,
@@ -87,12 +114,13 @@ class _AppListItemState extends State<AppListItem> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              // Favorite option
               ListTile(
                 leading: const Icon(Icons.star, color: Colors.white),
                 title: Text(
                   widget.isFavoriteList
-                      ? (lang == 'id' ? 'Hapus dari favorit' : 'Remove from favorites')
-                      : (lang == 'id' ? 'Tambah ke favorit' : 'Add to favorites'),
+                      ? (isIndonesian ? 'Hapus dari favorit' : 'Remove from favorites')
+                      : (isIndonesian ? 'Tambah ke favorit' : 'Add to favorites'),
                   style: const TextStyle(color: Colors.white),
                 ),
                 onTap: () {
@@ -101,6 +129,118 @@ class _AppListItemState extends State<AppListItem> {
                     context.read<FavoritesBloc>().add(RemoveFavoriteEvent(widget.app));
                   } else {
                     context.read<FavoritesBloc>().add(AddFavoriteEvent(widget.app));
+                  }
+                },
+              ),
+              
+              // App Lock option
+              ListTile(
+                leading: Icon(
+                  isLocked ? Icons.lock_open : Icons.lock,
+                  color: Colors.white,
+                ),
+                title: Text(
+                  isLocked
+                      ? (isIndonesian ? 'Buka Kunci Aplikasi' : 'Unlock App')
+                      : (isIndonesian ? 'Kunci Aplikasi dengan PIN' : 'Lock App with PIN'),
+                  style: const TextStyle(color: Colors.white),
+                ),
+                onTap: () async {
+                  Navigator.pop(ctx);
+                  if (!hasPin) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          isIndonesian
+                              ? 'Harap atur PIN Keamanan terlebih dahulu di menu Pengaturan!'
+                              : 'Please set up a Security PIN first in Launcher Settings!',
+                          style: const TextStyle(color: Colors.white),
+                        ),
+                        backgroundColor: Colors.amber.shade900,
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                    return;
+                  }
+                  
+                  final updatedList = List<String>.from(lockedApps);
+                  if (isLocked) {
+                    updatedList.remove(widget.app.packageName);
+                  } else {
+                    updatedList.add(widget.app.packageName);
+                  }
+                  await hive.saveLockedApps(updatedList);
+                  
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          isLocked
+                              ? (isIndonesian ? 'Aplikasi Berhasil Dibuka Kunci!' : 'App Unlocked Successfully!')
+                              : (isIndonesian ? 'Aplikasi Berhasil Dikunci!' : 'App Locked Successfully!'),
+                          style: const TextStyle(color: Colors.white),
+                        ),
+                        backgroundColor: Colors.green.shade800,
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                  }
+                },
+              ),
+
+              // App Hider option
+              ListTile(
+                leading: Icon(
+                  isHidden ? Icons.visibility : Icons.visibility_off,
+                  color: Colors.white,
+                ),
+                title: Text(
+                  isHidden
+                      ? (isIndonesian ? 'Tampilkan Kembali Aplikasi' : 'Unhide App')
+                      : (isIndonesian ? 'Sembunyikan Aplikasi' : 'Hide App'),
+                  style: const TextStyle(color: Colors.white),
+                ),
+                onTap: () async {
+                  Navigator.pop(ctx);
+                  if (!hasPin) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          isIndonesian
+                              ? 'Harap atur PIN Keamanan terlebih dahulu di menu Pengaturan!'
+                              : 'Please set up a Security PIN first in Launcher Settings!',
+                          style: const TextStyle(color: Colors.white),
+                        ),
+                        backgroundColor: Colors.amber.shade900,
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                    return;
+                  }
+                  
+                  final updatedList = List<String>.from(hiddenApps);
+                  if (isHidden) {
+                    updatedList.remove(widget.app.packageName);
+                  } else {
+                    updatedList.add(widget.app.packageName);
+                  }
+                  await hive.saveHiddenApps(updatedList);
+                  
+                  // Reload the main list so it disappears instantly
+                  if (context.mounted) {
+                    context.read<AppsBloc>().add(LoadAppsEvent());
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          isHidden
+                              ? (isIndonesian ? 'Aplikasi Ditampilkan Kembali!' : 'App Unhidden Successfully!')
+                              : (isIndonesian ? 'Aplikasi Berhasil Disembunyikan!' : 'App Hidden Successfully!'),
+                          style: const TextStyle(color: Colors.white),
+                        ),
+                        backgroundColor: Colors.green.shade800,
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
                   }
                 },
               ),

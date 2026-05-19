@@ -1,3 +1,5 @@
+import 'package:box_launcher/core/di/injection.dart';
+import 'package:box_launcher/data/datasources/local_datasource_hive.dart';
 import 'package:box_launcher/domain/entities/app_info.dart';
 import 'package:box_launcher/domain/usecases/app_usecases.dart';
 import 'package:equatable/equatable.dart';
@@ -23,8 +25,10 @@ class AppsBloc extends Bloc<AppsEvent, AppsState> {
     emit(AppsLoading());
     try {
       final apps = await getAppsUseCase();
-      apps.sort((a, b) => a.label.trim().toLowerCase().compareTo(b.label.trim().toLowerCase()));
-      emit(AppsLoaded(apps));
+      final hiddenApps = await getIt<LocalDataSourceHive>().getHiddenApps();
+      final filteredApps = apps.where((app) => !hiddenApps.contains(app.packageName)).toList();
+      filteredApps.sort((a, b) => a.label.trim().toLowerCase().compareTo(b.label.trim().toLowerCase()));
+      emit(AppsLoaded(filteredApps));
     } catch (e) {
       emit(AppsError(e.toString()));
     }

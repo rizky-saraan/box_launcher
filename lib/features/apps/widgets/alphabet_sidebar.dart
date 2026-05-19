@@ -1,5 +1,7 @@
 import 'package:box_launcher/domain/entities/app_info.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:box_launcher/features/home/widgets/settings/box_launcher_appearance_settings_page.dart';
 
 class AlphabetSidebar extends StatefulWidget {
   final List<AppInfo> apps;
@@ -119,6 +121,11 @@ class _AlphabetSidebarState extends State<AlphabetSidebar> {
       setState(() {
         _currentLetter = letter;
       });
+
+      // Play light selection click haptic tick if enabled
+      if (BoxLauncherAppearanceSettingsPage.enableHapticsNotifier.value) {
+        HapticFeedback.selectionClick();
+      }
 
       final appIndex = widget.apps
           .indexWhere((app) => app.label.toUpperCase().startsWith(letter));
